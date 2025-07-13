@@ -1,16 +1,19 @@
-import { ChatContext } from "@domain/entities/chat-context";
-import { ChatMessage, MessageType } from "@domain/entities/chat-message";
-import { ChatSession } from "@domain/entities/chat-session";
-import { Customer } from "@domain/entities/customer";
-import { Product } from "@domain/entities/product";
-import { IChatRepository } from "@domain/repositories/IChatRepository";
-import { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
-import { IChatbotService } from "@domain/services/chatbot-service";
-import { NotFoundError, ValidationError } from "@shared/errors/custom-error";
-import { v4 as uuidv4 } from "uuid";
+/* eslint-disable no-console */
+/* eslint-disable max-lines */
+/* eslint-disable max-len */
+import { ChatContext } from '@domain/entities/chat-context';
+import { ChatMessage, MessageType } from '@domain/entities/chat-message';
+import { ChatSession } from '@domain/entities/chat-session';
+import { Customer } from '@domain/entities/customer';
+import { Product } from '@domain/entities/product';
+import { IChatRepository } from '@domain/repositories/IChatRepository';
+import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
+import { IChatbotService } from '@domain/services/chatbot-service';
+import { NotFoundError, ValidationError } from '@shared/errors/custom-error';
+import { v4 as uuidv4 } from 'uuid';
 
-import { ChatRequestDto } from "../dtos/chat-request-dto";
-import { ChatResponseDto } from "../dtos/chat-response-dto";
+import { ChatRequestDto } from '../dtos/chat-request-dto';
+import { ChatResponseDto } from '../dtos/chat-response-dto';
 
 export interface ProcessChatMessageDependencies {
   chatRepository: IChatRepository;
@@ -45,10 +48,9 @@ export class ProcessChatMessage {
     }
   }
 
-  private isDependenciesObject(
-    obj: any
-  ): obj is ProcessChatMessageDependencies {
-    return obj && typeof obj === "object" && "chatRepository" in obj;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private isDependenciesObject(obj: any): obj is ProcessChatMessageDependencies {
+    return obj && typeof obj === 'object' && 'chatRepository' in obj;
   }
 
   async execute(request: ChatRequestDto): Promise<ChatResponseDto> {
@@ -68,56 +70,62 @@ export class ProcessChatMessage {
       const context = await this.buildChatContext(session, customer);
 
       // Step 5: Process message with chatbot service
-      const botResponse = await this.processBotResponse(
-        request.message,
-        context
-      );
+      const botResponse = await this.processBotResponse(request.message, context);
 
       await this.saveBotMessage(botResponse, session);
 
       // Step 7: Generate suggested actions
       const suggestedActions = this.generateSuggestedActions(
         request.message,
-        context.relevantProducts,
-        context
+        context.relevantProducts
       );
 
       // Step 8: Create and return response
       return this.createResponse(session, botResponse, suggestedActions);
     } catch (error) {
-      console.error("Error processing chat message:", error);
+      console.error('Error processing chat message:', error);
 
       if (error instanceof NotFoundError || error instanceof ValidationError) {
         throw error;
       }
 
-      throw new Error("Failed to process chat message. Please try again.");
+      throw new Error('Failed to process chat message. Please try again.');
     }
   }
 
   private validateRequest(request: ChatRequestDto): void {
-    if (!request.customerId || request.customerId.trim() === "") {
-      throw new ValidationError("Customer ID is required");
+    if (!request.customerId || request.customerId.trim() === '') {
+      throw new ValidationError('Customer ID is required');
     }
 
-    if (!request.message || request.message.trim() === "") {
-      throw new ValidationError("Message is required");
+    if (!request.message || request.message.trim() === '') {
+      throw new ValidationError('Message is required');
     }
 
     if (request.message.length > 2000) {
-      throw new ValidationError("Message cannot exceed 2000 characters");
+      throw new ValidationError('Message cannot exceed 2000 characters');
     }
 
-    if (request.sessionId && request.sessionId.trim() === "") {
-      throw new ValidationError("Session ID cannot be empty if provided");
+    if (request.sessionId && request.sessionId.trim() === '') {
+      throw new ValidationError('Session ID cannot be empty if provided');
     }
   }
 
   private async validateAndGetCustomer(customerId: string): Promise<Customer> {
-    const customer = await this.customerRepository.findById(customerId);
+    let customer = await this.customerRepository.findById(customerId);
 
     if (!customer) {
-      throw new NotFoundError(`Customer with ID ${customerId} not found`);
+      // Auto-create customer if they don't exist
+      console.log(`Creating new customer with ID: ${customerId}`);
+
+      customer = new Customer(
+        customerId,
+        `User ${customerId}`, // Default name
+        `${customerId}@example.com` // Default email
+      );
+
+      await this.customerRepository.save(customer);
+      console.log(`✅ Auto-created customer: ${customerId}`);
     }
 
     return customer;
@@ -135,17 +143,13 @@ export class ProcessChatMessage {
 
       // Validate session belongs to customer
       if (session && session.customerId !== customer.id) {
-        throw new ValidationError(
-          "Session does not belong to the specified customer"
-        );
+        throw new ValidationError('Session does not belong to the specified customer');
       }
     }
 
     // If no session found by ID, try to find active session for customer
     if (!session) {
-      session = await this.chatRepository.findActiveSessionByCustomerId(
-        customer.id
-      );
+      session = await this.chatRepository.findActiveSessionByCustomerId(customer.id);
     }
 
     // Create new session if none found
@@ -177,14 +181,9 @@ export class ProcessChatMessage {
     return userMessage;
   }
 
-  private async buildChatContext(
-    session: ChatSession,
-    customer: Customer
-  ): Promise<ChatContext> {
+  private async buildChatContext(session: ChatSession, customer: Customer): Promise<ChatContext> {
     // Get recent messages for context (last 20 messages)
-    const recentMessages = await this.chatRepository.getSessionMessages(
-      session.id
-    );
+    const recentMessages = await this.chatRepository.getSessionMessages(session.id);
     const contextMessages = recentMessages
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
       .slice(-20);
@@ -195,47 +194,36 @@ export class ProcessChatMessage {
     // Find relevant products using vector search
     const relevantProducts = await this.findRelevantProducts(conversationText);
 
-    return new ChatContext(
-      session.id,
-      customer.id,
-      contextMessages,
-      customer,
-      relevantProducts
-    );
+    return new ChatContext(session.id, customer.id, contextMessages, customer, relevantProducts);
   }
 
   private extractConversationText(messages: ChatMessage[]): string {
     return messages
-      .filter((msg) => msg.type === MessageType.USER)
-      .map((msg) => msg.content)
-      .join(" ");
+      .filter(msg => msg.type === MessageType.USER)
+      .map(msg => msg.content)
+      .join(' ');
   }
 
-  private async findRelevantProducts(
-    conversationText: string
-  ): Promise<Product[]> {
+  private async findRelevantProducts(conversationText: string): Promise<Product[]> {
     try {
       if (!conversationText.trim()) {
         return [];
       }
 
       // Use the last user message for product search
-      const lastUserMessage = conversationText.split(" ").slice(-50).join(" "); // Last 50 words
+      const lastUserMessage = conversationText.split(' ').slice(-50).join(' '); // Last 50 words
       return await this.chatbotService.findSimilarProducts(lastUserMessage, 5);
     } catch (error) {
-      console.error("Error finding relevant products:", error);
+      console.error('Error finding relevant products:', error);
       return [];
     }
   }
 
-  private async processBotResponse(
-    message: string,
-    context: ChatContext
-  ): Promise<string> {
+  private async processBotResponse(message: string, context: ChatContext): Promise<string> {
     try {
       return await this.chatbotService.processMessage(message, context);
     } catch (error) {
-      console.error("Error processing bot response:", error);
+      console.error('Error processing bot response:', error);
       return this.getFallbackResponse(message, context);
     }
   }
@@ -253,8 +241,8 @@ export class ProcessChatMessage {
       if (context.relevantProducts.length > 0) {
         const productNames = context.relevantProducts
           .slice(0, 3)
-          .map((p) => p.name)
-          .join(", ");
+          .map(p => p.name)
+          .join(', ');
         return `I found some products that might interest you: ${productNames}. Would you like more details about any of these?`;
       }
       return "I'd be happy to help you find products. Could you tell me more about what you're looking for?";
@@ -262,7 +250,7 @@ export class ProcessChatMessage {
 
     // Order inquiry response
     if (this.isOrderInquiry(lowerMessage)) {
-      return "I can help you with order-related questions. Please provide your order number or tell me what specific information you need about your order.";
+      return 'I can help you with order-related questions. Please provide your order number or tell me what specific information you need about your order.';
     }
 
     // Support request response
@@ -276,66 +264,66 @@ export class ProcessChatMessage {
 
   private isGreeting(message: string): boolean {
     const greetingPatterns = [
-      "hello",
-      "hi",
-      "hey",
-      "good morning",
-      "good afternoon",
-      "good evening",
-      "greetings",
-      "howdy",
+      'hello',
+      'hi',
+      'hey',
+      'good morning',
+      'good afternoon',
+      'good evening',
+      'greetings',
+      'howdy',
     ];
-    return greetingPatterns.some((pattern) => message.includes(pattern));
+    return greetingPatterns.some(pattern => message.includes(pattern));
   }
 
   private isProductInquiry(message: string): boolean {
     const productPatterns = [
-      "product",
-      "item",
-      "find",
-      "search",
-      "looking for",
-      "need",
-      "want",
-      "buy",
-      "purchase",
-      "show me",
-      "catalog",
-      "inventory",
+      'product',
+      'item',
+      'find',
+      'search',
+      'looking for',
+      'need',
+      'want',
+      'buy',
+      'purchase',
+      'show me',
+      'catalog',
+      'inventory',
     ];
-    return productPatterns.some((pattern) => message.includes(pattern));
+    return productPatterns.some(pattern => message.includes(pattern));
   }
 
   private isOrderInquiry(message: string): boolean {
     const orderPatterns = [
-      "order",
-      "purchase",
-      "bought",
-      "track",
-      "delivery",
-      "shipping",
-      "status",
-      "when will",
-      "receipt",
-      "confirmation",
+      'order',
+      'purchase',
+      'bought',
+      'track',
+      'delivery',
+      'shipping',
+      'status',
+      'when will',
+      'receipt',
+      'confirmation',
     ];
-    return orderPatterns.some((pattern) => message.includes(pattern));
+    return orderPatterns.some(pattern => message.includes(pattern));
   }
 
   private isSupportRequest(message: string): boolean {
     const supportPatterns = [
-      "help",
-      "support",
-      "problem",
-      "issue",
-      "trouble",
-      "error",
-      "question",
-      "assistance",
-      "can you",
-      "need help",
+      'help',
+      'support',
+      'problem',
+      'issue',
+      'trouble',
+      'error',
+      'question',
+      'assistance',
+      'can you',
+      'need help',
     ];
-    return supportPatterns.some((pattern) => message.includes(pattern));
+    return supportPatterns.some(pattern => message.includes(pattern));
   }
 
   private async saveBotMessage(
@@ -354,53 +342,40 @@ export class ProcessChatMessage {
     return botMessage;
   }
 
-  private generateSuggestedActions(
-    userMessage: string,
-    relevantProducts: Product[],
-    context: ChatContext
-  ): string[] {
+  private generateSuggestedActions(userMessage: string, relevantProducts: Product[]): string[] {
     const lowerMessage = userMessage.toLowerCase();
     const actions: string[] = [];
 
     // Order-related actions
     if (this.isOrderInquiry(lowerMessage)) {
-      actions.push(
-        "Track Order",
-        "Cancel Order",
-        "Return Policy",
-        "Contact Support"
-      );
+      actions.push('Track Order', 'Cancel Order', 'Return Policy', 'Contact Support');
     }
 
     // Product-related actions
     if (this.isProductInquiry(lowerMessage)) {
-      actions.push("Browse Categories", "View All Products", "Check Stock");
+      actions.push('Browse Categories', 'View All Products', 'Check Stock');
 
       if (relevantProducts.length > 0) {
-        actions.push(
-          "Compare Products",
-          "View Similar Items",
-          "Add to Wishlist"
-        );
+        actions.push('Compare Products', 'View Similar Items', 'Add to Wishlist');
       }
     }
 
     // Support-related actions
     if (this.isSupportRequest(lowerMessage)) {
-      actions.push("Contact Support", "FAQ", "Live Chat", "Report Issue");
+      actions.push('Contact Support', 'FAQ', 'Live Chat', 'Report Issue');
     }
 
     // Context-based actions
     if (relevantProducts.length > 0) {
-      const inStockProducts = relevantProducts.filter((p) => p.inStock);
+      const inStockProducts = relevantProducts.filter(p => p.inStock);
       if (inStockProducts.length > 0) {
-        actions.push("Add to Cart", "Check Availability");
+        actions.push('Add to Cart', 'Check Availability');
       }
     }
 
     // General actions if none specific
     if (actions.length === 0) {
-      actions.push("Browse Products", "Contact Support", "FAQ", "My Account");
+      actions.push('Browse Products', 'Contact Support', 'FAQ', 'My Account');
     }
 
     // Remove duplicates and limit to 6 actions
@@ -439,7 +414,7 @@ export class ProcessChatMessage {
     const messages = await this.chatRepository.getSessionMessages(sessionId);
     const lastActivity =
       messages.length > 0
-        ? messages[messages.length - 1].timestamp
+        ? (messages[messages.length - 1]?.timestamp ?? new Date())
         : session.createdAt;
 
     return {
@@ -449,13 +424,8 @@ export class ProcessChatMessage {
     };
   }
 
-  async validateSession(
-    sessionId: string,
-    customerId: string
-  ): Promise<boolean> {
+  async validateSession(sessionId: string, customerId: string): Promise<boolean> {
     const session = await this.chatRepository.findSessionById(sessionId);
-    return (
-      session !== null && session.customerId === customerId && session.isActive
-    );
+    return session !== null && session.customerId === customerId && session.isActive;
   }
 }

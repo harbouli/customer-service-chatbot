@@ -98,6 +98,9 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
   }
 
+  // Fix for the createSchema method in weaviate-vector-repository.ts
+  // Replace the existing createSchema method with this version:
+
   private async createSchema(): Promise<void> {
     const classObj = {
       class: this.className,
@@ -152,11 +155,13 @@ export class WeaviateVectorRepository implements IVectorRepository {
           dataType: ['string[]'],
           description: 'Product tags for categorization',
         },
+        // OPTION 1: Change specifications to text to store JSON string
         {
           name: 'specifications',
-          dataType: ['object'],
-          description: 'Product technical specifications',
+          dataType: ['text'],
+          description: 'Product technical specifications as JSON string',
         },
+
         {
           name: 'createdAt',
           dataType: ['string'],
@@ -175,7 +180,6 @@ export class WeaviateVectorRepository implements IVectorRepository {
       throw error;
     }
   }
-
   async storeProductEmbedding(embedding: ProductEmbedding): Promise<void> {
     await this.ensureInitialized();
 
@@ -187,12 +191,20 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
 
     try {
+      // Convert specifications object to JSON string for storage
+      const metadata = {
+        ...embedding.metadata,
+        specifications: embedding.metadata.specifications
+          ? JSON.stringify(embedding.metadata.specifications)
+          : '',
+      };
+
       await this.client.data
         .creator()
         .withClassName(this.className)
         .withId(embedding.id)
         .withVector(embedding.embedding)
-        .withProperties(embedding.metadata)
+        .withProperties(metadata)
         .do();
     } catch (error) {
       console.error(`❌ Failed to store embedding for product ${embedding.productId}:`, error);
@@ -200,7 +212,6 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
   }
 
-  // Rest of the methods remain the same...
   async searchSimilarProducts(queryEmbedding: number[], limit: number = 5): Promise<Product[]> {
     await this.ensureInitialized();
 
@@ -227,20 +238,30 @@ export class WeaviateVectorRepository implements IVectorRepository {
 
       const data = result.data?.Get?.[this.className] || [];
 
-      return data.map(
-        (item: any) =>
-          new Product(
-            item.productId,
-            item.name,
-            item.description,
-            item.category,
-            item.price,
-            item.inStock,
-            item.features || [],
-            item.specifications || {},
-            item.tags || []
-          )
-      );
+      return data.map((item: any) => {
+        // Parse specifications back to object
+        let specifications = {};
+        if (item.specifications) {
+          try {
+            specifications = JSON.parse(item.specifications);
+          } catch (error) {
+            console.warn('Failed to parse specifications JSON:', error);
+            specifications = {};
+          }
+        }
+
+        return new Product(
+          item.productId,
+          item.name,
+          item.description,
+          item.category,
+          item.price,
+          item.inStock,
+          item.features || [],
+          specifications,
+          item.tags || []
+        );
+      });
     } catch (error) {
       console.error('❌ Failed to search similar products:', error);
       return [];

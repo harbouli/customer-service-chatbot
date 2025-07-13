@@ -7,9 +7,14 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-// Import infrastructure using relative paths
+// Import infrastructure and use cases
+import { CreateCustomer } from './application/use-cases/create-customer';
+import { GetCustomer } from './application/use-cases/get-customer';
+import { GetCustomerSessions } from './application/use-cases/get-customer-sessions';
+import { GetSessionHistory } from './application/use-cases/get-session-history';
 import { InitializeProductEmbeddings } from './application/use-cases/initialize-product-embeddings';
 import { ProcessChatMessage } from './application/use-cases/process-chat-message';
+import { UpdateCustomer } from './application/use-cases/update-customer';
 import { metricsMiddleware } from './infrastructure/middleware/metrics-middleware';
 import { InMemoryChatRepository } from './infrastructure/repositories/in-memory-chat-repository';
 import { InMemoryCustomerRepository } from './infrastructure/repositories/in-memory-customer-repository';
@@ -17,12 +22,13 @@ import { InMemoryProductRepository } from './infrastructure/repositories/in-memo
 import { WeaviateVectorRepository } from './infrastructure/repositories/weaviate-vector-repository';
 import { EnhancedChatbotService } from './infrastructure/services/enhanced-chatbot-service';
 import { GoogleGenerativeAIService } from './infrastructure/services/google-generative-ai-service';
-// Import application layer
 
 // Import presentation layer
 import { ChatController } from './presentation/controllers/chat-controller';
+import { CustomerController } from './presentation/controllers/customer-controller';
 import { errorHandler } from './presentation/middleware/error-handler';
 import { createChatRoutes } from './presentation/routes/chat-routes';
+import { createCustomerRoutes } from './presentation/routes/customer-routes';
 
 dotenv.config();
 
@@ -85,11 +91,18 @@ async function initializeServer() {
       );
     }
 
+    // Initialize use cases
     const processChatMessage = new ProcessChatMessage(
       chatRepository,
       customerRepository,
       chatbotService
     );
+
+    const createCustomer = new CreateCustomer(customerRepository);
+    const getCustomer = new GetCustomer(customerRepository);
+    const updateCustomer = new UpdateCustomer(customerRepository);
+    const getSessionHistory = new GetSessionHistory(chatRepository);
+    const getCustomerSessions = new GetCustomerSessions(chatRepository);
 
     // Initialize product embeddings if AI service is available
     let initializeEmbeddings: InitializeProductEmbeddings | null = null;
@@ -101,15 +114,18 @@ async function initializeServer() {
       );
     }
 
+    // Initialize controllers
     const chatController = new ChatController(
       processChatMessage,
-      // Mock use cases for now - you can implement these later
-      {} as any, // GetSessionHistory
-      {} as any // GetCustomerSessions
+      getSessionHistory,
+      getCustomerSessions
     );
 
-    // Routes
+    const customerController = new CustomerController(createCustomer, getCustomer, updateCustomer);
+
+    // Mount routes
     app.use('/api/chat', createChatRoutes(chatController));
+    app.use('/api/customers', createCustomerRoutes(customerController));
 
     // Health check
     app.get('/health', (_, res) => {
@@ -131,13 +147,14 @@ async function initializeServer() {
         version: '1.0.0',
         endpoints: {
           chat: '/api/chat/message',
+          customers: '/api/customers',
           health: '/health',
         },
         features: {
           aiPowered: !!aiService,
           vectorSearch: true,
           contextualResponses: true,
-          multiLanguage: false,
+          customerManagement: true,
         },
       });
     });
@@ -192,7 +209,8 @@ async function startServer() {
     const server = app.listen(PORT, () => {
       console.log(`🚀 Customer Support Chatbot server running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/health`);
-      console.log(`💬 Chat API: http://localhost:${PORT}/api/chat`);
+      console.log(`💬 Chat API: http://localhost:${PORT}/api/chat/message`);
+      console.log(`👥 Customers API: http://localhost:${PORT}/api/customers`);
       console.log(`📊 API Info: http://localhost:${PORT}/api`);
     });
 
