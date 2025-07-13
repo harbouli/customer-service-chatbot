@@ -1,0 +1,551 @@
+import { body, param, query, ValidationChain } from "express-validator";
+
+// ===========================
+// CHAT VALIDATION
+// ===========================
+
+export const validateChatMessage: ValidationChain[] = [
+  body("customerId")
+    .isString()
+    .notEmpty()
+    .withMessage("Customer ID is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Customer ID must be between 1 and 100 characters")
+    .matches(/^[a-zA-Z0-9\-_]+$/)
+    .withMessage(
+      "Customer ID can only contain alphanumeric characters, hyphens, and underscores"
+    ),
+
+  body("message")
+    .isString()
+    .notEmpty()
+    .withMessage("Message is required")
+    .isLength({ min: 1, max: 2000 })
+    .withMessage("Message must be between 1 and 2000 characters")
+    .trim()
+    .escape(), // Prevent XSS
+
+  body("sessionId")
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage("Session ID cannot be empty if provided")
+    .isLength({ max: 100 })
+    .withMessage("Session ID cannot exceed 100 characters")
+    .matches(/^[a-zA-Z0-9\-_]+$/)
+    .withMessage(
+      "Session ID can only contain alphanumeric characters, hyphens, and underscores"
+    ),
+];
+
+export const validateSessionId: ValidationChain[] = [
+  param("sessionId")
+    .isString()
+    .notEmpty()
+    .withMessage("Session ID is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Session ID must be between 1 and 100 characters")
+    .matches(/^[a-zA-Z0-9\-_]+$/)
+    .withMessage("Invalid session ID format"),
+];
+
+export const validateCustomerId: ValidationChain[] = [
+  param("customerId")
+    .isString()
+    .notEmpty()
+    .withMessage("Customer ID is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Customer ID must be between 1 and 100 characters")
+    .matches(/^[a-zA-Z0-9\-_]+$/)
+    .withMessage("Invalid customer ID format"),
+];
+
+// ===========================
+// CUSTOMER VALIDATION
+// ===========================
+
+export const validateCreateCustomer: ValidationChain[] = [
+  body("name")
+    .isString()
+    .notEmpty()
+    .withMessage("Customer name is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Customer name must be between 1 and 100 characters")
+    .trim()
+    .escape()
+    .matches(/^[a-zA-Z\s\-'\.]+$/)
+    .withMessage(
+      "Name can only contain letters, spaces, hyphens, apostrophes, and periods"
+    ),
+
+  body("email")
+    .isEmail()
+    .withMessage("Valid email is required")
+    .normalizeEmail()
+    .isLength({ max: 255 })
+    .withMessage("Email cannot exceed 255 characters")
+    .custom(async (email) => {
+      // Additional email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Invalid email format");
+      }
+      return true;
+    }),
+
+  body("phone")
+    .optional()
+    .isString()
+    .matches(/^\+?[1-9]\d{1,14}$/)
+    .withMessage(
+      "Invalid phone number format (use international format with optional +)"
+    )
+    .isLength({ max: 20 })
+    .withMessage("Phone number cannot exceed 20 characters"),
+];
+
+export const validateUpdateCustomer: ValidationChain[] = [
+  body("name")
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage("Customer name cannot be empty")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Customer name must be between 1 and 100 characters")
+    .trim()
+    .escape()
+    .matches(/^[a-zA-Z\s\-'\.]+$/)
+    .withMessage(
+      "Name can only contain letters, spaces, hyphens, apostrophes, and periods"
+    ),
+
+  body("email")
+    .optional()
+    .isEmail()
+    .withMessage("Valid email is required")
+    .normalizeEmail()
+    .isLength({ max: 255 })
+    .withMessage("Email cannot exceed 255 characters"),
+
+  body("phone")
+    .optional()
+    .custom((value) => {
+      if (value === null || value === "") return true; // Allow null/empty
+      if (typeof value !== "string") return false;
+      return /^\+?[1-9]\d{1,14}$/.test(value);
+    })
+    .withMessage("Invalid phone number format")
+    .isLength({ max: 20 })
+    .withMessage("Phone number cannot exceed 20 characters"),
+];
+
+// ===========================
+// PRODUCT VALIDATION
+// ===========================
+
+export const validateCreateProduct: ValidationChain[] = [
+  body("name")
+    .isString()
+    .notEmpty()
+    .withMessage("Product name is required")
+    .isLength({ min: 1, max: 200 })
+    .withMessage("Product name must be between 1 and 200 characters")
+    .trim()
+    .escape(),
+
+  body("description")
+    .isString()
+    .notEmpty()
+    .withMessage("Product description is required")
+    .isLength({ min: 10, max: 1000 })
+    .withMessage("Product description must be between 10 and 1000 characters")
+    .trim()
+    .escape(),
+
+  body("category")
+    .isString()
+    .notEmpty()
+    .withMessage("Product category is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Product category must be between 1 and 100 characters")
+    .trim()
+    .escape()
+    .isIn([
+      "Electronics",
+      "Appliances",
+      "Sports",
+      "Books",
+      "Clothing",
+      "Home",
+      "Garden",
+      "Toys",
+      "Health",
+      "Beauty",
+    ])
+    .withMessage("Invalid product category"),
+
+  body("price")
+    .isFloat({ min: 0.01, max: 1000000 })
+    .withMessage("Price must be between 0.01 and 1,000,000")
+    .toFloat(),
+
+  body("inStock")
+    .isBoolean()
+    .withMessage("inStock must be a boolean")
+    .toBoolean(),
+
+  body("features")
+    .optional()
+    .isArray({ min: 0, max: 50 })
+    .withMessage("Features must be an array with maximum 50 items")
+    .custom((features) => {
+      return features.every(
+        (feature: any) =>
+          typeof feature === "string" &&
+          feature.length >= 1 &&
+          feature.length <= 100
+      );
+    })
+    .withMessage("All features must be strings between 1-100 characters"),
+
+  body("tags")
+    .optional()
+    .isArray({ min: 0, max: 20 })
+    .withMessage("Tags must be an array with maximum 20 items")
+    .custom((tags) => {
+      return tags.every(
+        (tag: any) =>
+          typeof tag === "string" &&
+          tag.length >= 1 &&
+          tag.length <= 50 &&
+          /^[a-zA-Z0-9\-_\s]+$/.test(tag)
+      );
+    })
+    .withMessage(
+      "All tags must be alphanumeric strings between 1-50 characters"
+    ),
+
+  body("specifications")
+    .optional()
+    .isObject()
+    .withMessage("Specifications must be an object")
+    .custom((specs) => {
+      const keys = Object.keys(specs);
+      if (keys.length > 20) {
+        throw new Error("Specifications cannot have more than 20 properties");
+      }
+      return keys.every(
+        (key) =>
+          typeof key === "string" &&
+          key.length <= 50 &&
+          typeof specs[key] === "string" &&
+          specs[key].length <= 200
+      );
+    })
+    .withMessage(
+      "Specification keys and values must be strings within size limits"
+    ),
+];
+
+export const validateUpdateProduct: ValidationChain[] = [
+  body("name")
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage("Product name cannot be empty")
+    .isLength({ min: 1, max: 200 })
+    .withMessage("Product name must be between 1 and 200 characters")
+    .trim()
+    .escape(),
+
+  body("description")
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage("Product description cannot be empty")
+    .isLength({ min: 10, max: 1000 })
+    .withMessage("Product description must be between 10 and 1000 characters")
+    .trim()
+    .escape(),
+
+  body("category")
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage("Product category cannot be empty")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Product category must be between 1 and 100 characters")
+    .trim()
+    .escape()
+    .isIn([
+      "Electronics",
+      "Appliances",
+      "Sports",
+      "Books",
+      "Clothing",
+      "Home",
+      "Garden",
+      "Toys",
+      "Health",
+      "Beauty",
+    ])
+    .withMessage("Invalid product category"),
+
+  body("price")
+    .optional()
+    .isFloat({ min: 0.01, max: 1000000 })
+    .withMessage("Price must be between 0.01 and 1,000,000")
+    .toFloat(),
+
+  body("inStock")
+    .optional()
+    .isBoolean()
+    .withMessage("inStock must be a boolean")
+    .toBoolean(),
+
+  body("features")
+    .optional()
+    .isArray({ min: 0, max: 50 })
+    .withMessage("Features must be an array with maximum 50 items")
+    .custom((features) => {
+      return features.every(
+        (feature: any) =>
+          typeof feature === "string" &&
+          feature.length >= 1 &&
+          feature.length <= 100
+      );
+    })
+    .withMessage("All features must be strings between 1-100 characters"),
+
+  body("tags")
+    .optional()
+    .isArray({ min: 0, max: 20 })
+    .withMessage("Tags must be an array with maximum 20 items")
+    .custom((tags) => {
+      return tags.every(
+        (tag: any) =>
+          typeof tag === "string" &&
+          tag.length >= 1 &&
+          tag.length <= 50 &&
+          /^[a-zA-Z0-9\-_\s]+$/.test(tag)
+      );
+    })
+    .withMessage(
+      "All tags must be alphanumeric strings between 1-50 characters"
+    ),
+];
+
+export const validateProductId: ValidationChain[] = [
+  param("productId")
+    .isString()
+    .notEmpty()
+    .withMessage("Product ID is required")
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Product ID must be between 1 and 100 characters")
+    .matches(/^[a-zA-Z0-9\-_]+$/)
+    .withMessage("Invalid product ID format"),
+];
+
+// ===========================
+// SEARCH VALIDATION
+// ===========================
+
+export const validateProductSearch: ValidationChain[] = [
+  query("q")
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 200 })
+    .withMessage("Search query must be between 1-200 characters")
+    .trim()
+    .escape(),
+
+  query("category")
+    .optional()
+    .isString()
+    .isLength({ max: 100 })
+    .withMessage("Category cannot exceed 100 characters")
+    .trim()
+    .escape()
+    .isIn([
+      "Electronics",
+      "Appliances",
+      "Sports",
+      "Books",
+      "Clothing",
+      "Home",
+      "Garden",
+      "Toys",
+      "Health",
+      "Beauty",
+    ])
+    .withMessage("Invalid category"),
+
+  query("minPrice")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Min price must be 0 or greater")
+    .toFloat(),
+
+  query("maxPrice")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Max price must be 0 or greater")
+    .toFloat()
+    .custom((value, { req }) => {
+      const minPrice = parseFloat(req.query?.minPrice as string);
+      if (minPrice && value < minPrice) {
+        throw new Error("Max price must be greater than min price");
+      }
+      return true;
+    }),
+
+  query("inStock")
+    .optional()
+    .isBoolean()
+    .withMessage("inStock must be true or false")
+    .toBoolean(),
+
+  query("tags")
+    .optional()
+    .customSanitizer((value) => {
+      if (typeof value === "string") {
+        return value
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag.length > 0);
+      }
+      return Array.isArray(value) ? value : [];
+    })
+    .isArray({ max: 10 })
+    .withMessage(
+      "Tags must be a comma-separated string or array with max 10 items"
+    ),
+
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Limit must be between 1 and 100")
+    .toInt(),
+
+  query("offset")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("Offset must be 0 or greater")
+    .toInt(),
+];
+
+// ===========================
+// ADMIN VALIDATION
+// ===========================
+
+export const validateEmbeddingOptions: ValidationChain[] = [
+  body("batchSize")
+    .optional()
+    .isInt({ min: 1, max: 50 })
+    .withMessage("Batch size must be between 1 and 50")
+    .toInt(),
+
+  body("delayBetweenBatches")
+    .optional()
+    .isInt({ min: 0, max: 30000 })
+    .withMessage("Delay must be between 0 and 30000 milliseconds")
+    .toInt(),
+
+  body("maxRetries")
+    .optional()
+    .isInt({ min: 1, max: 10 })
+    .withMessage("Max retries must be between 1 and 10")
+    .toInt(),
+
+  body("skipExisting")
+    .optional()
+    .isBoolean()
+    .withMessage("Skip existing must be a boolean")
+    .toBoolean(),
+
+  body("forceRegenerate")
+    .optional()
+    .isBoolean()
+    .withMessage("Force regenerate must be a boolean")
+    .toBoolean(),
+];
+
+export const validateProductIds: ValidationChain[] = [
+  body("productIds")
+    .isArray({ min: 1, max: 100 })
+    .withMessage("Product IDs must be a non-empty array with maximum 100 items")
+    .custom((productIds) => {
+      return productIds.every(
+        (id: any) =>
+          typeof id === "string" &&
+          id.length > 0 &&
+          id.length <= 100 &&
+          /^[a-zA-Z0-9\-_]+$/.test(id)
+      );
+    })
+    .withMessage("All product IDs must be valid strings"),
+
+  body("options")
+    .optional()
+    .isObject()
+    .withMessage("Options must be an object"),
+];
+
+// ===========================
+// PAGINATION VALIDATION
+// ===========================
+
+export const validatePagination: ValidationChain[] = [
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("Page must be 1 or greater")
+    .toInt(),
+
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("Limit must be between 1 and 100")
+    .toInt(),
+
+  query("sort")
+    .optional()
+    .isString()
+    .isIn([
+      "name",
+      "price",
+      "created",
+      "updated",
+      "-name",
+      "-price",
+      "-created",
+      "-updated",
+    ])
+    .withMessage("Invalid sort field"),
+];
+
+// ===========================
+// FILE UPLOAD VALIDATION
+// ===========================
+
+export const validateFileUpload: ValidationChain[] = [
+  body("file").custom((value, { req }) => {
+    if (!req.file) {
+      throw new Error("File is required");
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      throw new Error(
+        "Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed"
+      );
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (req.file.size > maxSize) {
+      throw new Error("File size cannot exceed 5MB");
+    }
+
+    return true;
+  }),
+];
