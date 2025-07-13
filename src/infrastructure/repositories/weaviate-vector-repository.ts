@@ -1,15 +1,18 @@
 /* eslint-disable max-lines */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
-import { Product } from '@domain/entities/product';
-import { ProductEmbedding } from '@domain/entities/product-embedding';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
+
 import weaviate, { WeaviateClient } from 'weaviate-ts-client';
+import { Product } from '../../domain/entities/product';
+import { ProductEmbedding } from '../../domain/entities/product-embedding';
+import { IVectorRepository } from '../../domain/repositories/IVectorRepository';
 
 export class WeaviateVectorRepository implements IVectorRepository {
   private client: WeaviateClient;
   private className = 'Product';
   private isInitialized = false;
+  private expectedDimensions = 768; // Google's embedding dimensions
 
   constructor(
     private weaviateUrl: string = 'http://localhost:8080',
@@ -38,12 +41,44 @@ export class WeaviateVectorRepository implements IVectorRepository {
       // Test connection
       await this.testConnection();
 
-      // Check if schema exists
+      // Check if schema exists and if dimensions match
       const schema = await this.client.schema.getter().do();
-      const classExists = schema.classes?.some(cls => cls.class === this.className);
+      const existingClass = schema.classes?.find(cls => cls.class === this.className);
 
-      if (!classExists) {
-        console.log('📋 Creating Weaviate schema...');
+      if (existingClass) {
+        console.log('📋 Existing Product class found');
+
+        // Check if we need to recreate due to dimension mismatch
+        try {
+          // Try to get an existing object to check dimensions
+          const result = await this.client.graphql
+            .get()
+            .withClassName(this.className)
+            .withFields('_additional { vector }')
+            .withLimit(1)
+            .do();
+
+          const objects = result.data?.Get?.[this.className] || [];
+          if (objects.length > 0 && objects[0]._additional?.vector) {
+            const existingDimensions = objects[0]._additional.vector.length;
+
+            // eslint-disable-next-line max-depth
+            if (existingDimensions !== this.expectedDimensions) {
+              console.warn(
+                `⚠️ Dimension mismatch detected: existing=${existingDimensions}, expected=${this.expectedDimensions}`
+              );
+              console.log('🗑️ Recreating schema with correct dimensions...');
+
+              await this.client.schema.classDeleter().withClassName(this.className).do();
+              await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for cleanup
+              await this.createSchema();
+            }
+          }
+        } catch (error) {
+          console.log('ℹ️ Could not check existing dimensions, schema might be empty');
+        }
+      } else {
+        console.log('📋 Creating new Weaviate schema...');
         await this.createSchema();
       }
 
@@ -68,6 +103,10 @@ export class WeaviateVectorRepository implements IVectorRepository {
       class: this.className,
       description: 'Product information with vector embeddings for semantic search',
       vectorizer: 'none', // We provide our own vectors
+      vectorIndexConfig: {
+        distance: 'cosine',
+        dimensions: this.expectedDimensions, // Explicitly set dimensions
+      },
       properties: [
         {
           name: 'productId',
@@ -115,8 +154,8 @@ export class WeaviateVectorRepository implements IVectorRepository {
         },
         {
           name: 'specifications',
-          dataType: ['text'],
-          description: 'Product technical specifications as JSON string',
+          dataType: ['object'],
+          description: 'Product technical specifications',
         },
         {
           name: 'createdAt',
@@ -128,7 +167,9 @@ export class WeaviateVectorRepository implements IVectorRepository {
 
     try {
       await this.client.schema.classCreator().withClass(classObj).do();
-      console.log(`✅ Created Weaviate class: ${this.className}`);
+      console.log(
+        `✅ Created Weaviate class: ${this.className} with ${this.expectedDimensions} dimensions`
+      );
     } catch (error) {
       console.error('❌ Failed to create Weaviate schema:', error);
       throw error;
@@ -138,19 +179,20 @@ export class WeaviateVectorRepository implements IVectorRepository {
   async storeProductEmbedding(embedding: ProductEmbedding): Promise<void> {
     await this.ensureInitialized();
 
-    try {
-      // Convert specifications to JSON string if it's an object
-      const metadata = { ...embedding.metadata };
-      if (metadata.specifications && typeof metadata.specifications === 'object') {
-        metadata.specifications = JSON.stringify(metadata.specifications);
-      }
+    // Validate embedding dimensions
+    if (embedding.embedding.length !== this.expectedDimensions) {
+      throw new Error(
+        `Embedding dimension mismatch: got ${embedding.embedding.length}, expected ${this.expectedDimensions}`
+      );
+    }
 
+    try {
       await this.client.data
         .creator()
         .withClassName(this.className)
         .withId(embedding.id)
         .withVector(embedding.embedding)
-        .withProperties(metadata)
+        .withProperties(embedding.metadata)
         .do();
     } catch (error) {
       console.error(`❌ Failed to store embedding for product ${embedding.productId}:`, error);
@@ -158,8 +200,16 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
   }
 
+  // Rest of the methods remain the same...
   async searchSimilarProducts(queryEmbedding: number[], limit: number = 5): Promise<Product[]> {
     await this.ensureInitialized();
+
+    // Validate query embedding dimensions
+    if (queryEmbedding.length !== this.expectedDimensions) {
+      throw new Error(
+        `Query embedding dimension mismatch: got ${queryEmbedding.length}, expected ${this.expectedDimensions}`
+      );
+    }
 
     try {
       const result = await this.client.graphql
@@ -170,27 +220,27 @@ export class WeaviateVectorRepository implements IVectorRepository {
         )
         .withNearVector({
           vector: queryEmbedding,
-          certainty: 0.6, // Minimum similarity threshold
+          certainty: 0.6,
         })
         .withLimit(limit)
         .do();
 
       const data = result.data?.Get?.[this.className] || [];
 
-      return data.map((item: any) => {
-        const specifications = item.specifications ? JSON.parse(item.specifications) : {};
-        return new Product(
-          item.productId,
-          item.name,
-          item.description,
-          item.category,
-          item.price,
-          item.inStock,
-          item.features || [],
-          specifications,
-          item.tags || []
-        );
-      });
+      return data.map(
+        (item: any) =>
+          new Product(
+            item.productId,
+            item.name,
+            item.description,
+            item.category,
+            item.price,
+            item.inStock,
+            item.features || [],
+            item.specifications || {},
+            item.tags || []
+          )
+      );
     } catch (error) {
       console.error('❌ Failed to search similar products:', error);
       return [];
@@ -200,8 +250,14 @@ export class WeaviateVectorRepository implements IVectorRepository {
   async updateProductEmbedding(productId: string, embedding: number[]): Promise<void> {
     await this.ensureInitialized();
 
+    // Validate embedding dimensions
+    if (embedding.length !== this.expectedDimensions) {
+      throw new Error(
+        `Embedding dimension mismatch: got ${embedding.length}, expected ${this.expectedDimensions}`
+      );
+    }
+
     try {
-      // Find the object by productId
       const result = await this.client.graphql
         .get()
         .withClassName(this.className)
@@ -274,58 +330,6 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
   }
 
-  async getEmbeddingCount(): Promise<number> {
-    await this.ensureInitialized();
-
-    try {
-      const result = await this.client.graphql
-        .aggregate()
-        .withClassName(this.className)
-        .withFields('meta { count }')
-        .do();
-
-      return result.data?.Aggregate?.[this.className]?.[0]?.meta?.count || 0;
-    } catch (error) {
-      console.error('❌ Failed to get embedding count:', error);
-      return 0;
-    }
-  }
-
-  async findEmbeddingByProductId(productId: string): Promise<ProductEmbedding | null> {
-    await this.ensureInitialized();
-
-    try {
-      const result = await this.client.graphql
-        .get()
-        .withClassName(this.className)
-        .withFields('productId')
-        .withWhere({
-          path: ['productId'],
-          operator: 'Equal',
-          valueString: productId,
-        })
-        .withLimit(1)
-        .do();
-
-      const objects = result.data?.Get?.[this.className] || [];
-
-      if (objects.length === 0) {
-        return null;
-      }
-
-      // Note: This is a simplified return - in practice you'd need to fetch the full embedding
-      return new ProductEmbedding(
-        objects[0]._additional?.id || '',
-        productId,
-        [], // Vector not included in this query
-        objects[0]
-      );
-    } catch (error) {
-      console.error(`❌ Failed to find embedding for product ${productId}:`, error);
-      return null;
-    }
-  }
-
   async clearAllEmbeddings(): Promise<void> {
     await this.ensureInitialized();
 
@@ -345,11 +349,11 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
   }
 
-  // Health check
   async healthCheck(): Promise<{
     connected: boolean;
     schemaExists: boolean;
     embeddingCount: number;
+    expectedDimensions: number;
   }> {
     try {
       await this.testConnection();
@@ -360,9 +364,35 @@ export class WeaviateVectorRepository implements IVectorRepository {
 
       const embeddingCount = await this.getEmbeddingCount();
 
-      return { connected, schemaExists, embeddingCount };
-    } catch {
-      return { connected: false, schemaExists: false, embeddingCount: 0 };
+      return {
+        connected,
+        schemaExists,
+        embeddingCount,
+        expectedDimensions: this.expectedDimensions,
+      };
+    } catch (error) {
+      // eslint-disable-next-line max-lines
+      return {
+        connected: false,
+        schemaExists: false,
+        embeddingCount: 0,
+        expectedDimensions: this.expectedDimensions,
+      };
+    }
+  }
+
+  private async getEmbeddingCount(): Promise<number> {
+    try {
+      const result = await this.client.graphql
+        .aggregate()
+        .withClassName(this.className)
+        .withFields('meta { count }')
+        .do();
+
+      return result.data?.Aggregate?.[this.className]?.[0]?.meta?.count || 0;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      return 0;
     }
   }
 }

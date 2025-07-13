@@ -1,13 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
-import { IGenerativeAIService } from '@domain/services/chatbot-service';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { IGenerativeAIService } from '../../domain/services/chatbot-service';
 
 export class GoogleGenerativeAIService implements IGenerativeAIService {
   private genAI: GoogleGenerativeAI;
   private model: any;
   private embeddingModel: any;
   private isInitialized = false;
+  private embeddingDimensions = 768;
 
   constructor(
     apiKey: string,
@@ -16,9 +19,7 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
   ) {
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({ model: modelName });
-    this.embeddingModel = this.genAI.getGenerativeModel({
-      model: embeddingModelName,
-    });
+    this.embeddingModel = this.genAI.getGenerativeModel({ model: embeddingModelName });
   }
 
   async initialize(): Promise<void> {
@@ -31,6 +32,7 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
       await this.model.generateContent('Test connection');
       this.isInitialized = true;
       console.log('✅ Google AI service initialized successfully');
+      console.log(`📊 Embedding dimensions: ${this.embeddingDimensions}`);
     } catch (error) {
       console.error('❌ Failed to initialize Google AI service:', error);
       throw new Error(`Google AI initialization failed: ${error}`);
@@ -70,6 +72,13 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
         return this.generateFallbackEmbedding(text);
       }
 
+      // Verify the dimension is what we expect
+      if (embedding.length !== this.embeddingDimensions) {
+        console.warn(
+          `⚠️ Unexpected embedding dimension: got ${embedding.length}, expected ${this.embeddingDimensions}`
+        );
+      }
+
       return embedding;
     } catch (error) {
       console.error('❌ Failed to generate embedding:', error);
@@ -78,35 +87,15 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
     }
   }
 
-  async generateBatchEmbeddings(texts: string[]): Promise<number[][]> {
-    const embeddings: number[][] = [];
-
-    for (const text of texts) {
-      try {
-        const embedding = await this.generateEmbedding(text);
-        embeddings.push(embedding);
-
-        // Small delay to avoid rate limits
-        await this.delay(100);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_) {
-        console.error(`Failed to generate embedding for text: ${text.substring(0, 50)}...`);
-        embeddings.push(this.generateFallbackEmbedding(text));
-      }
-    }
-
-    return embeddings;
-  }
-
   private generateFallbackEmbedding(text: string): number[] {
-    // Generate a deterministic hash-based embedding
+    // Generate a deterministic hash-based embedding with correct dimensions
     const words = text.toLowerCase().split(/\s+/);
-    const embedding = new Array(384).fill(0);
+    const embedding = new Array(this.embeddingDimensions).fill(0);
 
     words.forEach((word, wordIndex) => {
       for (let i = 0; i < word.length; i++) {
         const charCode = word.charCodeAt(i);
-        const index = (charCode + wordIndex * 31 + i * 7) % 384;
+        const index = (charCode + wordIndex * 31 + i * 7) % this.embeddingDimensions;
         embedding[index] += Math.sin(charCode * 0.1) * 0.1;
       }
     });
@@ -116,14 +105,15 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
     return norm > 0 ? embedding.map(val => val / norm) : embedding;
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  getEmbeddingDimensions(): number {
+    return this.embeddingDimensions;
   }
 
   async healthCheck(): Promise<{
     connected: boolean;
     modelAvailable: boolean;
     embeddingModelAvailable: boolean;
+    embeddingDimensions: number;
   }> {
     try {
       // Test text generation
@@ -138,26 +128,15 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
         connected: true,
         modelAvailable,
         embeddingModelAvailable,
+        embeddingDimensions: this.embeddingDimensions,
       };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return {
         connected: false,
         modelAvailable: false,
         embeddingModelAvailable: false,
+        embeddingDimensions: this.embeddingDimensions,
       };
     }
-  }
-
-  getModelInfo(): {
-    modelName: string;
-    embeddingModelName: string;
-    embeddingDimensions: number;
-  } {
-    return {
-      modelName: this.model.model,
-      embeddingModelName: this.embeddingModel.model,
-      embeddingDimensions: 384, // Default for text-embedding-004
-    };
   }
 }
