@@ -1,5 +1,7 @@
-import { IGenerativeAIService } from "@domain/services/chatbot-service";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
+import { IGenerativeAIService } from '@domain/services/chatbot-service';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export class GoogleGenerativeAIService implements IGenerativeAIService {
   private genAI: GoogleGenerativeAI;
@@ -9,8 +11,8 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
 
   constructor(
     apiKey: string,
-    modelName: string = "gemini-1.5-flash",
-    embeddingModelName: string = "text-embedding-004"
+    modelName: string = 'gemini-1.5-flash',
+    embeddingModelName: string = 'text-embedding-004'
   ) {
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({ model: modelName });
@@ -26,39 +28,37 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
 
     try {
       // Test the connection with a simple request
-      await this.model.generateContent("Test connection");
+      await this.model.generateContent('Test connection');
       this.isInitialized = true;
-      console.log("✅ Google AI service initialized successfully");
+      console.log('✅ Google AI service initialized successfully');
     } catch (error) {
-      console.error("❌ Failed to initialize Google AI service:", error);
+      console.error('❌ Failed to initialize Google AI service:', error);
       throw new Error(`Google AI initialization failed: ${error}`);
     }
   }
 
-  async generateResponse(prompt: string, context?: any): Promise<string> {
+  async generateResponse(prompt: string): Promise<string> {
     try {
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
-      if (!text || text.trim() === "") {
-        throw new Error("Empty response from AI service");
+      if (!text || text.trim() === '') {
+        throw new Error('Empty response from AI service');
       }
 
       return text.trim();
     } catch (error) {
-      console.error("❌ Failed to generate AI response:", error);
+      console.error('❌ Failed to generate AI response:', error);
       throw new Error(
-        `AI response generation failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+        `AI response generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
-    if (!text || text.trim() === "") {
-      throw new Error("Text cannot be empty for embedding generation");
+    if (!text || text.trim() === '') {
+      throw new Error('Text cannot be empty for embedding generation');
     }
 
     try {
@@ -66,14 +66,14 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
       const embedding = result.embedding.values;
 
       if (!Array.isArray(embedding) || embedding.length === 0) {
-        console.warn("⚠️ Invalid embedding from Google AI, using fallback");
+        console.warn('⚠️ Invalid embedding from Google AI, using fallback');
         return this.generateFallbackEmbedding(text);
       }
 
       return embedding;
     } catch (error) {
-      console.error("❌ Failed to generate embedding:", error);
-      console.log("🔄 Using fallback embedding generation");
+      console.error('❌ Failed to generate embedding:', error);
+      console.log('🔄 Using fallback embedding generation');
       return this.generateFallbackEmbedding(text);
     }
   }
@@ -88,10 +88,9 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
 
         // Small delay to avoid rate limits
         await this.delay(100);
-      } catch (error) {
-        console.error(
-          `Failed to generate embedding for text: ${text.substring(0, 50)}...`
-        );
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_) {
+        console.error(`Failed to generate embedding for text: ${text.substring(0, 50)}...`);
         embeddings.push(this.generateFallbackEmbedding(text));
       }
     }
@@ -114,11 +113,11 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
 
     // Normalize the embedding
     const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-    return norm > 0 ? embedding.map((val) => val / norm) : embedding;
+    return norm > 0 ? embedding.map(val => val / norm) : embedding;
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async healthCheck(): Promise<{
@@ -128,19 +127,19 @@ export class GoogleGenerativeAIService implements IGenerativeAIService {
   }> {
     try {
       // Test text generation
-      const testResponse = await this.model.generateContent("Hello");
+      const testResponse = await this.model.generateContent('Hello');
       const modelAvailable = !!testResponse.response.text();
 
       // Test embedding generation
-      const testEmbedding = await this.generateEmbedding("test");
-      const embeddingModelAvailable =
-        Array.isArray(testEmbedding) && testEmbedding.length > 0;
+      const testEmbedding = await this.generateEmbedding('test');
+      const embeddingModelAvailable = Array.isArray(testEmbedding) && testEmbedding.length > 0;
 
       return {
         connected: true,
         modelAvailable,
         embeddingModelAvailable,
       };
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       return {
         connected: false,

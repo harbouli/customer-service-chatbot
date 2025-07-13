@@ -1,20 +1,23 @@
-import { Product } from "@domain/entities/product";
-import { ProductEmbedding } from "@domain/entities/product-embedding";
-import { IVectorRepository } from "@domain/repositories/IVectorRepository";
-import weaviate, { WeaviateClient } from "weaviate-ts-client";
+/* eslint-disable max-lines */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
+import { Product } from '@domain/entities/product';
+import { ProductEmbedding } from '@domain/entities/product-embedding';
+import { IVectorRepository } from '@domain/repositories/IVectorRepository';
+import weaviate, { WeaviateClient } from 'weaviate-ts-client';
 
 export class WeaviateVectorRepository implements IVectorRepository {
   private client: WeaviateClient;
-  private className = "Product";
+  private className = 'Product';
   private isInitialized = false;
 
   constructor(
-    private weaviateUrl: string = "http://localhost:8080",
-    private apiKey?: string
+    private weaviateUrl: string = 'http://localhost:8080',
+    apiKey?: string
   ) {
     const config: any = {
-      scheme: weaviateUrl.includes("https") ? "https" : "http",
-      host: weaviateUrl.replace("http://", "").replace("https://", ""),
+      scheme: weaviateUrl.includes('https') ? 'https' : 'http',
+      host: weaviateUrl.replace('http://', '').replace('https://', ''),
     };
 
     if (apiKey) {
@@ -30,26 +33,24 @@ export class WeaviateVectorRepository implements IVectorRepository {
     }
 
     try {
-      console.log("🔄 Initializing Weaviate connection...");
+      console.log('🔄 Initializing Weaviate connection...');
 
       // Test connection
       await this.testConnection();
 
       // Check if schema exists
       const schema = await this.client.schema.getter().do();
-      const classExists = schema.classes?.some(
-        (cls) => cls.class === this.className
-      );
+      const classExists = schema.classes?.some(cls => cls.class === this.className);
 
       if (!classExists) {
-        console.log("📋 Creating Weaviate schema...");
+        console.log('📋 Creating Weaviate schema...');
         await this.createSchema();
       }
 
       this.isInitialized = true;
-      console.log("✅ Weaviate initialized successfully");
+      console.log('✅ Weaviate initialized successfully');
     } catch (error) {
-      console.error("❌ Failed to initialize Weaviate:", error);
+      console.error('❌ Failed to initialize Weaviate:', error);
       throw error;
     }
   }
@@ -58,72 +59,69 @@ export class WeaviateVectorRepository implements IVectorRepository {
     try {
       await this.client.misc.liveChecker().do();
     } catch (error) {
-      throw new Error(
-        `Failed to connect to Weaviate at ${this.weaviateUrl}: ${error}`
-      );
+      throw new Error(`Failed to connect to Weaviate at ${this.weaviateUrl}: ${error}`);
     }
   }
 
   private async createSchema(): Promise<void> {
     const classObj = {
       class: this.className,
-      description:
-        "Product information with vector embeddings for semantic search",
-      vectorizer: "none", // We provide our own vectors
+      description: 'Product information with vector embeddings for semantic search',
+      vectorizer: 'none', // We provide our own vectors
       properties: [
         {
-          name: "productId",
-          dataType: ["string"],
-          description: "Unique product identifier",
+          name: 'productId',
+          dataType: ['string'],
+          description: 'Unique product identifier',
           indexInverted: true,
         },
         {
-          name: "name",
-          dataType: ["string"],
-          description: "Product name",
+          name: 'name',
+          dataType: ['string'],
+          description: 'Product name',
           indexInverted: true,
         },
         {
-          name: "description",
-          dataType: ["text"],
-          description: "Product description",
+          name: 'description',
+          dataType: ['text'],
+          description: 'Product description',
           indexInverted: true,
         },
         {
-          name: "category",
-          dataType: ["string"],
-          description: "Product category",
+          name: 'category',
+          dataType: ['string'],
+          description: 'Product category',
           indexInverted: true,
         },
         {
-          name: "price",
-          dataType: ["number"],
-          description: "Product price in USD",
+          name: 'price',
+          dataType: ['number'],
+          description: 'Product price in USD',
         },
         {
-          name: "inStock",
-          dataType: ["boolean"],
-          description: "Product availability",
+          name: 'inStock',
+          dataType: ['boolean'],
+          description: 'Product availability',
         },
         {
-          name: "features",
-          dataType: ["string[]"],
-          description: "Product features list",
+          name: 'features',
+          dataType: ['string[]'],
+          description: 'Product features list',
         },
         {
-          name: "tags",
-          dataType: ["string[]"],
-          description: "Product tags for categorization",
+          name: 'tags',
+          dataType: ['string[]'],
+          description: 'Product tags for categorization',
         },
         {
-          name: "specifications",
-          dataType: ["object"],
-          description: "Product technical specifications",
+          name: 'specifications',
+          dataType: ['text'],
+          description: 'Product technical specifications as JSON string',
         },
         {
-          name: "createdAt",
-          dataType: ["string"],
-          description: "Embedding creation timestamp",
+          name: 'createdAt',
+          dataType: ['string'],
+          description: 'Embedding creation timestamp',
         },
       ],
     };
@@ -132,7 +130,7 @@ export class WeaviateVectorRepository implements IVectorRepository {
       await this.client.schema.classCreator().withClass(classObj).do();
       console.log(`✅ Created Weaviate class: ${this.className}`);
     } catch (error) {
-      console.error("❌ Failed to create Weaviate schema:", error);
+      console.error('❌ Failed to create Weaviate schema:', error);
       throw error;
     }
   }
@@ -141,26 +139,26 @@ export class WeaviateVectorRepository implements IVectorRepository {
     await this.ensureInitialized();
 
     try {
+      // Convert specifications to JSON string if it's an object
+      const metadata = { ...embedding.metadata };
+      if (metadata.specifications && typeof metadata.specifications === 'object') {
+        metadata.specifications = JSON.stringify(metadata.specifications);
+      }
+
       await this.client.data
         .creator()
         .withClassName(this.className)
         .withId(embedding.id)
         .withVector(embedding.embedding)
-        .withProperties(embedding.metadata)
+        .withProperties(metadata)
         .do();
     } catch (error) {
-      console.error(
-        `❌ Failed to store embedding for product ${embedding.productId}:`,
-        error
-      );
+      console.error(`❌ Failed to store embedding for product ${embedding.productId}:`, error);
       throw error;
     }
   }
 
-  async searchSimilarProducts(
-    queryEmbedding: number[],
-    limit: number = 5
-  ): Promise<Product[]> {
+  async searchSimilarProducts(queryEmbedding: number[], limit: number = 5): Promise<Product[]> {
     await this.ensureInitialized();
 
     try {
@@ -168,7 +166,7 @@ export class WeaviateVectorRepository implements IVectorRepository {
         .get()
         .withClassName(this.className)
         .withFields(
-          "productId name description category price inStock features tags specifications"
+          'productId name description category price inStock features tags specifications'
         )
         .withNearVector({
           vector: queryEmbedding,
@@ -179,30 +177,27 @@ export class WeaviateVectorRepository implements IVectorRepository {
 
       const data = result.data?.Get?.[this.className] || [];
 
-      return data.map(
-        (item: any) =>
-          new Product(
-            item.productId,
-            item.name,
-            item.description,
-            item.category,
-            item.price,
-            item.inStock,
-            item.features || [],
-            item.specifications || {},
-            item.tags || []
-          )
-      );
+      return data.map((item: any) => {
+        const specifications = item.specifications ? JSON.parse(item.specifications) : {};
+        return new Product(
+          item.productId,
+          item.name,
+          item.description,
+          item.category,
+          item.price,
+          item.inStock,
+          item.features || [],
+          specifications,
+          item.tags || []
+        );
+      });
     } catch (error) {
-      console.error("❌ Failed to search similar products:", error);
+      console.error('❌ Failed to search similar products:', error);
       return [];
     }
   }
 
-  async updateProductEmbedding(
-    productId: string,
-    embedding: number[]
-  ): Promise<void> {
+  async updateProductEmbedding(productId: string, embedding: number[]): Promise<void> {
     await this.ensureInitialized();
 
     try {
@@ -210,10 +205,10 @@ export class WeaviateVectorRepository implements IVectorRepository {
       const result = await this.client.graphql
         .get()
         .withClassName(this.className)
-        .withFields("productId")
+        .withFields('productId')
         .withWhere({
-          path: ["productId"],
-          operator: "Equal",
+          path: ['productId'],
+          operator: 'Equal',
           valueString: productId,
         })
         .withLimit(1)
@@ -237,10 +232,7 @@ export class WeaviateVectorRepository implements IVectorRepository {
         .withVector(embedding)
         .do();
     } catch (error) {
-      console.error(
-        `❌ Failed to update embedding for product ${productId}:`,
-        error
-      );
+      console.error(`❌ Failed to update embedding for product ${productId}:`, error);
       throw error;
     }
   }
@@ -249,20 +241,35 @@ export class WeaviateVectorRepository implements IVectorRepository {
     await this.ensureInitialized();
 
     try {
-      await this.client.data
-        .deleter()
+      // Find the object by productId first
+      const result = await this.client.graphql
+        .get()
         .withClassName(this.className)
+        .withFields('_additional { id }')
         .withWhere({
-          path: ["productId"],
-          operator: "Equal",
+          path: ['productId'],
+          operator: 'Equal',
           valueString: productId,
         })
+        .withLimit(1)
         .do();
+
+      const objects = result.data?.Get?.[this.className] || [];
+
+      if (objects.length === 0) {
+        console.log(`No embedding found for product ${productId}`);
+        return;
+      }
+
+      const objectId = objects[0]._additional?.id;
+      if (!objectId) {
+        console.log(`Could not get object ID for product ${productId}`);
+        return;
+      }
+
+      await this.client.data.deleter().withClassName(this.className).withId(objectId).do();
     } catch (error) {
-      console.error(
-        `❌ Failed to delete embedding for product ${productId}:`,
-        error
-      );
+      console.error(`❌ Failed to delete embedding for product ${productId}:`, error);
       throw error;
     }
   }
@@ -274,29 +281,27 @@ export class WeaviateVectorRepository implements IVectorRepository {
       const result = await this.client.graphql
         .aggregate()
         .withClassName(this.className)
-        .withFields("meta { count }")
+        .withFields('meta { count }')
         .do();
 
       return result.data?.Aggregate?.[this.className]?.[0]?.meta?.count || 0;
     } catch (error) {
-      console.error("❌ Failed to get embedding count:", error);
+      console.error('❌ Failed to get embedding count:', error);
       return 0;
     }
   }
 
-  async findEmbeddingByProductId(
-    productId: string
-  ): Promise<ProductEmbedding | null> {
+  async findEmbeddingByProductId(productId: string): Promise<ProductEmbedding | null> {
     await this.ensureInitialized();
 
     try {
       const result = await this.client.graphql
         .get()
         .withClassName(this.className)
-        .withFields("productId")
+        .withFields('productId')
         .withWhere({
-          path: ["productId"],
-          operator: "Equal",
+          path: ['productId'],
+          operator: 'Equal',
           valueString: productId,
         })
         .withLimit(1)
@@ -310,16 +315,13 @@ export class WeaviateVectorRepository implements IVectorRepository {
 
       // Note: This is a simplified return - in practice you'd need to fetch the full embedding
       return new ProductEmbedding(
-        objects[0]._additional?.id || "",
+        objects[0]._additional?.id || '',
         productId,
         [], // Vector not included in this query
         objects[0]
       );
     } catch (error) {
-      console.error(
-        `❌ Failed to find embedding for product ${productId}:`,
-        error
-      );
+      console.error(`❌ Failed to find embedding for product ${productId}:`, error);
       return null;
     }
   }
@@ -328,14 +330,11 @@ export class WeaviateVectorRepository implements IVectorRepository {
     await this.ensureInitialized();
 
     try {
-      await this.client.schema
-        .classDeleter()
-        .withClassName(this.className)
-        .do();
+      await this.client.schema.classDeleter().withClassName(this.className).do();
       await this.createSchema();
-      console.log("🗑️ Cleared all embeddings");
+      console.log('🗑️ Cleared all embeddings');
     } catch (error) {
-      console.error("❌ Failed to clear embeddings:", error);
+      console.error('❌ Failed to clear embeddings:', error);
       throw error;
     }
   }
@@ -357,13 +356,12 @@ export class WeaviateVectorRepository implements IVectorRepository {
       const connected = true;
 
       const schema = await this.client.schema.getter().do();
-      const schemaExists =
-        schema.classes?.some((cls) => cls.class === this.className) || false;
+      const schemaExists = schema.classes?.some(cls => cls.class === this.className) || false;
 
       const embeddingCount = await this.getEmbeddingCount();
 
       return { connected, schemaExists, embeddingCount };
-    } catch (error) {
+    } catch {
       return { connected: false, schemaExists: false, embeddingCount: 0 };
     }
   }

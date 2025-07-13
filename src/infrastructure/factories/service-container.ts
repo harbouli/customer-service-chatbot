@@ -1,26 +1,28 @@
-import { IEventBus } from "@application/events/IEventBus";
-import { ICacheService } from "@application/interfaces/ICacheService";
-import { IEmailService } from "@application/interfaces/IEmailService";
-import { INotificationService } from "@application/interfaces/INotificationService";
-import { IChatRepository } from "@domain/repositories/IChatRepository";
-import { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
-import { IProductRepository } from "@domain/repositories/IProductRepository";
-import { IVectorRepository } from "@domain/repositories/IVectorRepository";
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { IEventBus } from '@application/events/IEventBus';
+import { ICacheService } from '@application/interfaces/ICacheService';
+import { IEmailService } from '@application/interfaces/IEmailService';
+import { INotificationService } from '@application/interfaces/INotificationService';
+import { IChatRepository } from '@domain/repositories/IChatRepository';
+import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
+import { IProductRepository } from '@domain/repositories/IProductRepository';
+import { IVectorRepository } from '@domain/repositories/IVectorRepository';
+import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
+import { ConfigService } from '@infrastructure/config/app-config';
+import { InMemoryChatRepository } from '@infrastructure/repositories/in-memory-chat-repository';
+import { InMemoryCustomerRepository } from '@infrastructure/repositories/in-memory-customer-repository';
+import { InMemoryProductRepository } from '@infrastructure/repositories/in-memory-product-repository';
+import { WeaviateVectorRepository } from '@infrastructure/repositories/weaviate-vector-repository';
 import {
-  IChatbotService,
-  IGenerativeAIService,
-} from "@domain/services/chatbot-service";
-import { ConfigService } from "@infrastructure/config/app-config";
-import { InMemoryChatRepository } from "@infrastructure/repositories/in-memory-chat-repository";
-import { InMemoryCustomerRepository } from "@infrastructure/repositories/in-memory-customer-repository";
-import { InMemoryProductRepository } from "@infrastructure/repositories/in-memory-product-repository";
-import { WeaviateVectorRepository } from "@infrastructure/repositories/weaviate-vector-repository";
-import { EnhancedChatbotService } from "@infrastructure/services/enhanced-chatbot-service";
-import { InMemoryCacheService } from "@infrastructure/services/enhanced-chatbot-service";
-import { EmailService } from "@infrastructure/services/enhanced-chatbot-service";
-import { NotificationService } from "@infrastructure/services/enhanced-chatbot-service";
-import { InMemoryEventBus } from "@infrastructure/services/event-bus-service";
-import { GoogleGenerativeAIService } from "@infrastructure/services/google-generative-ai-service";
+  EmailService,
+  EnhancedChatbotService,
+  InMemoryCacheService,
+  NotificationService,
+} from '@infrastructure/services/enhanced-chatbot-service';
+import { InMemoryEventBus } from '@infrastructure/services/event-bus-service';
+import { GoogleGenerativeAIService } from '@infrastructure/services/google-generative-ai-service';
 
 export class ServiceContainer {
   private static instance: ServiceContainer;
@@ -36,7 +38,7 @@ export class ServiceContainer {
   }
 
   async initialize(): Promise<void> {
-    console.log("🏗️ Initializing service container...");
+    console.log('🏗️ Initializing service container...');
 
     const config = ConfigService.getInstance();
 
@@ -50,9 +52,9 @@ export class ServiceContainer {
       // Initialize AI services
       await this.initializeAIServices(config);
 
-      console.log("✅ Service container initialized successfully");
+      console.log('✅ Service container initialized successfully');
     } catch (error) {
-      console.error("❌ Failed to initialize service container:", error);
+      console.error('❌ Failed to initialize service container:', error);
       throw error;
     }
   }
@@ -60,15 +62,15 @@ export class ServiceContainer {
   private async initializeRepositories(config: ConfigService): Promise<void> {
     // Customer Repository
     const customerRepository = new InMemoryCustomerRepository();
-    this.register("customerRepository", customerRepository);
+    this.register('customerRepository', customerRepository);
 
     // Product Repository
     const productRepository = new InMemoryProductRepository();
-    this.register("productRepository", productRepository);
+    this.register('productRepository', productRepository);
 
     // Chat Repository
     const chatRepository = new InMemoryChatRepository();
-    this.register("chatRepository", chatRepository);
+    this.register('chatRepository', chatRepository);
 
     // Vector Repository
     const vectorConfig = config.getVector();
@@ -77,15 +79,15 @@ export class ServiceContainer {
       vectorConfig.weaviateApiKey
     );
     await vectorRepository.initialize();
-    this.register("vectorRepository", vectorRepository);
+    this.register('vectorRepository', vectorRepository);
 
-    console.log("✅ Repositories initialized");
+    console.log('✅ Repositories initialized');
   }
 
   private async initializeServices(config: ConfigService): Promise<void> {
     // Cache Service
     const cacheService = new InMemoryCacheService();
-    this.register("cacheService", cacheService);
+    this.register('cacheService', cacheService);
 
     // Email Service
     const emailConfig = config.getEmail();
@@ -96,17 +98,17 @@ export class ServiceContainer {
       emailConfig.password,
       emailConfig.fromEmail
     );
-    this.register("emailService", emailService);
+    this.register('emailService', emailService);
 
     // Notification Service
     const notificationService = new NotificationService();
-    this.register("notificationService", notificationService);
+    this.register('notificationService', notificationService);
 
     // Event Bus
     const eventBus = new InMemoryEventBus();
-    this.register("eventBus", eventBus);
+    this.register('eventBus', eventBus);
 
-    console.log("✅ Infrastructure services initialized");
+    console.log('✅ Infrastructure services initialized');
   }
 
   private async initializeAIServices(config: ConfigService): Promise<void> {
@@ -120,19 +122,19 @@ export class ServiceContainer {
         aiConfig.embeddingModelName
       );
       await aiService.initialize();
-      this.register("aiService", aiService);
+      this.register('aiService', aiService);
 
       // Chatbot Service
       const chatbotService = new EnhancedChatbotService(
-        this.get("productRepository"),
-        this.get("vectorRepository"),
+        this.get('productRepository'),
+        this.get('vectorRepository'),
         aiService
       );
-      this.register("chatbotService", chatbotService);
+      this.register('chatbotService', chatbotService);
 
-      console.log("✅ AI services initialized");
+      console.log('✅ AI services initialized');
     } else {
-      console.warn("⚠️ AI services not initialized - missing API key");
+      console.warn('⚠️ AI services not initialized - missing API key');
     }
   }
 
@@ -154,57 +156,55 @@ export class ServiceContainer {
 
   // Typed getters for commonly used services
   getCustomerRepository(): ICustomerRepository {
-    return this.get<ICustomerRepository>("customerRepository");
+    return this.get<ICustomerRepository>('customerRepository');
   }
 
   getProductRepository(): IProductRepository {
-    return this.get<IProductRepository>("productRepository");
+    return this.get<IProductRepository>('productRepository');
   }
 
   getChatRepository(): IChatRepository {
-    return this.get<IChatRepository>("chatRepository");
+    return this.get<IChatRepository>('chatRepository');
   }
 
   getVectorRepository(): IVectorRepository {
-    return this.get<IVectorRepository>("vectorRepository");
+    return this.get<IVectorRepository>('vectorRepository');
   }
 
   getChatbotService(): IChatbotService {
-    return this.get<IChatbotService>("chatbotService");
+    return this.get<IChatbotService>('chatbotService');
   }
 
   getAIService(): IGenerativeAIService {
-    return this.get<IGenerativeAIService>("aiService");
+    return this.get<IGenerativeAIService>('aiService');
   }
 
   getCacheService(): ICacheService {
-    return this.get<ICacheService>("cacheService");
+    return this.get<ICacheService>('cacheService');
   }
 
   getEmailService(): IEmailService {
-    return this.get<IEmailService>("emailService");
+    return this.get<IEmailService>('emailService');
   }
 
   getNotificationService(): INotificationService {
-    return this.get<INotificationService>("notificationService");
+    return this.get<INotificationService>('notificationService');
   }
 
   getEventBus(): IEventBus {
-    return this.get<IEventBus>("eventBus");
+    return this.get<IEventBus>('eventBus');
   }
 
   async dispose(): Promise<void> {
-    console.log("🧹 Disposing service container...");
+    console.log('🧹 Disposing service container...');
 
     // Dispose services that need cleanup
-    const cacheService = this.services.get(
-      "cacheService"
-    ) as InMemoryCacheService;
+    const cacheService = this.services.get('cacheService') as InMemoryCacheService;
     if (cacheService) {
       cacheService.destroy();
     }
 
     this.services.clear();
-    console.log("✅ Service container disposed");
+    console.log('✅ Service container disposed');
   }
 }
