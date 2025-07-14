@@ -1,10 +1,6 @@
-import { Customer } from "@domain/entities/customer";
+import { Customer } from '@domain/entities/customer';
 
-import {
-  CustomerDto,
-  CreateCustomerDto,
-  UpdateCustomerDto,
-} from "../dtos/customer-dto";
+import { CreateCustomerDto, CustomerDto, UpdateCustomerDto } from '../dtos/customer-dto';
 
 export class CustomerMapper {
   static toDto(customer: Customer): CustomerDto {
@@ -12,7 +8,7 @@ export class CustomerMapper {
       id: customer.id,
       name: customer.name,
       email: customer.email,
-      phone: customer.phone,
+      phone: customer.phone ?? '',
     };
   }
 

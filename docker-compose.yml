@@ -1,6 +1,29 @@
 version: '3.8'
 
 services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: productdb
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://admin:password123@localhost:27017/productdb --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Weaviate Vector Database
   weaviate:
     command:
       - --host
@@ -10,10 +33,11 @@ services:
       - --scheme
       - http
     image: cr.weaviate.io/semitechnologies/weaviate:1.25.0
+    container_name: weaviate
+    restart: unless-stopped
     ports:
       - '8080:8080'
       - '50051:50051'
-    restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
@@ -21,25 +45,76 @@ services:
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: ''
       CLUSTER_HOSTNAME: 'node1'
+      WEAVIATE_HOST: 'weaviate'
     volumes:
       - weaviate_data:/var/lib/weaviate
+    networks:
+      - app-network
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8080/v1/.well-known/live']
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:8080/v1/.well-known/live',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  # Application Service
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: product-app
+    restart: unless-stopped
     ports:
       - '3000:3000'
     environment:
       - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/productdb
       - WEAVIATE_URL=http://weaviate:8080
+      - WEAVIATE_API_KEY=
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - PORT=3000
     depends_on:
+      mongodb:
+        condition: service_healthy
       weaviate:
         condition: service_healthy
+    networks:
+      - app-network
+    volumes:
+      - ./logs:/app/logs
+
+  # MongoDB Admin Interface (optional)
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mongo-express
     restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - app-network
 
 volumes:
+  mongodb_data:
+    driver: local
   weaviate_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
