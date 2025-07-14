@@ -1,11 +1,7 @@
-import {
-  CreateCustomerDto,
-  UpdateCustomerDto,
-  CustomerDto,
-} from "../dtos/customer-dto";
-import { CreateCustomer } from "../use-cases/create-customer";
-import { GetCustomer } from "../use-cases/get-customer";
-import { UpdateCustomer } from "../use-cases/update-customer";
+import { CreateCustomerDto, UpdateCustomerDto, CustomerDto } from '../dtos/customer-dto';
+import { CreateCustomer } from '../use-cases/create-customer';
+import { GetCustomer } from '../use-cases/get-customer';
+import { UpdateCustomer } from '../use-cases/update-customer';
 
 export class CustomerService {
   constructor(
@@ -22,10 +18,7 @@ export class CustomerService {
     return await this.getCustomer.execute(customerId);
   }
 
-  async update(
-    customerId: string,
-    dto: UpdateCustomerDto
-  ): Promise<CustomerDto> {
+  async update(customerId: string, dto: UpdateCustomerDto): Promise<CustomerDto> {
     return await this.updateCustomer.execute(customerId, dto);
   }
 }

@@ -1,5 +1,5 @@
-import { ChatAnalyticsDto, ProductAnalyticsDto } from "../dtos/analytics-dto";
-import { GetChatAnalytics } from "../use-cases/get-chat-analytics";
+import { ChatAnalyticsDto, ProductAnalyticsDto } from '../dtos/analytics-dto';
+import { GetChatAnalytics } from '../use-cases/get-chat-analytics';
 
 export class AnalyticsService {
   constructor(private chatAnalyticsUseCase: GetChatAnalytics) {}

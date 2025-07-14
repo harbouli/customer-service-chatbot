@@ -8,23 +8,20 @@ import {
   SearchProducts,
   UpdateCustomer,
   UpdateProduct,
-} from "@application/use-cases";
-import { IChatRepository } from "@domain/repositories/IChatRepository";
-import { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
-import { IProductRepository } from "@domain/repositories/IProductRepository";
-import { IVectorRepository } from "@domain/repositories/IVectorRepository";
-import {
-  IChatbotService,
-  IGenerativeAIService,
-} from "@domain/services/chatbot-service";
+} from '@application/use-cases';
+import { IChatRepository } from '@domain/repositories/IChatRepository';
+import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
+import { IProductRepository } from '@domain/repositories/IProductRepository';
+import { IVectorRepository } from '@domain/repositories/IVectorRepository';
+import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
 
 // Use cases
-import { AnalyticsService } from "../services/analytics-service";
-import { ChatService } from "../services/chat-service";
-import { CustomerService } from "../services/customer-service";
-import { ProductService } from "../services/product-service";
-import { CreateCustomer } from "../use-cases/create-customer";
-import { GetCustomer } from "../use-cases/get-customer";
+import { AnalyticsService } from '../services/analytics.service';
+import { ChatService } from '../services/chat.service';
+import { CustomerService } from '../services/customer.service';
+import { ProductService } from '../services/product.service';
+import { CreateCustomer } from '../use-cases/create-customer';
+import { GetCustomer } from '../use-cases/get-customer';
 
 // Services
 
@@ -49,11 +46,7 @@ export class ServiceFactory {
       const getCustomer = new GetCustomer(this.customerRepository);
       const updateCustomer = new UpdateCustomer(this.customerRepository);
 
-      this.customerService = new CustomerService(
-        createCustomer,
-        getCustomer,
-        updateCustomer
-      );
+      this.customerService = new CustomerService(createCustomer, getCustomer, updateCustomer);
     }
     return this.customerService;
   }
@@ -70,14 +63,8 @@ export class ServiceFactory {
         this.vectorRepository,
         this.aiService
       );
-      const searchProducts = new SearchProducts(
-        this.productRepository,
-        this.chatbotService
-      );
-      const deleteProduct = new DeleteProduct(
-        this.productRepository,
-        this.vectorRepository
-      );
+      const searchProducts = new SearchProducts(this.productRepository, this.chatbotService);
+      const deleteProduct = new DeleteProduct(this.productRepository, this.vectorRepository);
 
       this.productService = new ProductService(
         createProduct,
@@ -97,9 +84,7 @@ export class ServiceFactory {
         this.chatbotService
       );
       const sessionHistoryUseCase = new GetSessionHistory(this.chatRepository);
-      const customerSessionsUseCase = new GetCustomerSessions(
-        this.chatRepository
-      );
+      const customerSessionsUseCase = new GetCustomerSessions(this.chatRepository);
 
       this.chatService = new ChatService(
         processChatMessage,

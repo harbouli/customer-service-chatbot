@@ -3,11 +3,11 @@ import {
   UpdateProductDto,
   ProductDto,
   ProductSearchDto,
-} from "../dtos/product-dto";
-import { CreateProduct } from "../use-cases/create-product";
-import { DeleteProduct } from "../use-cases/delete-product";
-import { SearchProducts } from "../use-cases/search-products";
-import { UpdateProduct } from "../use-cases/update-product";
+} from '../dtos/product-dto';
+import { CreateProduct } from '../use-cases/create-product';
+import { DeleteProduct } from '../use-cases/delete-product';
+import { SearchProducts } from '../use-cases/search-products';
+import { UpdateProduct } from '../use-cases/update-product';
 
 export class ProductService {
   constructor(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import helmet from 'helmet';
 
 export function createSecurityMiddleware() {
@@ -39,7 +40,7 @@ export function createSecurityMiddleware() {
 
 // Additional security headers middleware
 export function additionalSecurityHeaders() {
-  return (req: any, res: any, next: any) => {
+  return (_req: any, res: any, next: any) => {
     // API-specific security headers
     res.setHeader('X-API-Version', '1.0.0');
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');

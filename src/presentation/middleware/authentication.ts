@@ -1,123 +1,141 @@
-import { ConfigService } from "@infrastructure/config/app-config";
-import { CustomError } from "@shared/errors/custom-error";
-import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import {
+  AccountDeactivatedError,
+  AuthenticationService,
+  InvalidTokenError,
+  TokenExpiredError,
+} from '@application/services/auth.service';
+import { ConfigService } from '@infrastructure/config/app-config';
+import { MongoDBUserRepository } from '@infrastructure/repositories/mongodb-user-repository';
+import { CustomError } from '@shared/errors/custom-error';
+import { NextFunction, Request, Response } from 'express';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: "admin" | "user" | "moderator";
-    permissions?: string[];
+    firstName: string;
+    lastName: string;
+    role: 'admin' | 'user' | 'moderator';
+    permissions: string[];
+    isActive: boolean;
+    emailVerified: boolean;
   };
 }
 
 export class AuthenticationError extends CustomError {
-  constructor(message: string = "Authentication required") {
-    super(message, 401, "AUTHENTICATION_ERROR");
+  constructor(message: string = 'Authentication required') {
+    super(message, 401, 'AUTHENTICATION_ERROR');
   }
 }
 
 export class AuthorizationError extends CustomError {
-  constructor(message: string = "Insufficient permissions") {
-    super(message, 403, "AUTHORIZATION_ERROR");
+  constructor(message: string = 'Insufficient permissions') {
+    super(message, 403, 'AUTHORIZATION_ERROR');
   }
 }
 
-export class TokenExpiredError extends CustomError {
-  constructor(message: string = "Token has expired") {
-    super(message, 401, "TOKEN_EXPIRED");
-  }
-}
+// Create singleton instances
+const userRepository = new MongoDBUserRepository();
+const authService = new AuthenticationService(userRepository);
 
-// JWT Secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key";
-
-// Mock user database (replace with real database)
+// Mock users for development (fallback when MongoDB is not available)
 const mockUsers = new Map([
   [
-    "admin-1",
+    'admin-1',
     {
-      id: "admin-1",
-      email: "admin@example.com",
-      role: "admin" as const,
-      permissions: ["*"], // All permissions
+      id: 'admin-1',
+      email: 'admin@example.com',
+      firstName: 'Admin',
+      lastName: 'User',
+      role: 'admin' as const,
+      permissions: ['*'], // All permissions
+      isActive: true,
+      emailVerified: true,
     },
   ],
   [
-    "user-1",
+    'user-1',
     {
-      id: "user-1",
-      email: "user@example.com",
-      role: "user" as const,
-      permissions: ["chat:read", "chat:write", "products:read"],
+      id: 'user-1',
+      email: 'user@example.com',
+      firstName: 'Regular',
+      lastName: 'User',
+      role: 'user' as const,
+      permissions: ['chat:read', 'chat:write', 'products:read'],
+      isActive: true,
+      emailVerified: true,
     },
   ],
   [
-    "moderator-1",
+    'moderator-1',
     {
-      id: "moderator-1",
-      email: "moderator@example.com",
-      role: "moderator" as const,
-      permissions: [
-        "chat:read",
-        "chat:write",
-        "products:read",
-        "products:write",
-        "analytics:read",
-      ],
+      id: 'moderator-1',
+      email: 'moderator@example.com',
+      firstName: 'Moderator',
+      lastName: 'User',
+      role: 'moderator' as const,
+      permissions: ['chat:read', 'chat:write', 'products:read', 'products:write', 'analytics:read'],
+      isActive: true,
+      emailVerified: true,
     },
   ],
 ]);
 
 // Authentication middleware
-export const authenticate = (
+export const authenticate = async (
   req: AuthenticatedRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new AuthenticationError("Missing or invalid authorization header");
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new AuthenticationError('Missing or invalid authorization header');
     }
 
     const token = authHeader.substring(7);
+    const config = ConfigService.getInstance();
 
     // Handle mock tokens for development
-    const config = ConfigService.getInstance();
     if (config.isDevelopment()) {
-      if (token === "mock-admin-token") {
-        req.user = mockUsers.get("admin-1")!;
+      if (token === 'mock-admin-token') {
+        req.user = mockUsers.get('admin-1')!;
         return next();
-      } else if (token === "mock-user-token") {
-        req.user = mockUsers.get("user-1")!;
+      } else if (token === 'mock-user-token') {
+        req.user = mockUsers.get('user-1')!;
         return next();
-      } else if (token === "mock-moderator-token") {
-        req.user = mockUsers.get("moderator-1")!;
+      } else if (token === 'mock-moderator-token') {
+        req.user = mockUsers.get('moderator-1')!;
         return next();
       }
     }
 
-    // Real JWT verification
+    // Real JWT verification with MongoDB
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const user = mockUsers.get(decoded.userId);
+      const user = await authService.verifyAccessToken(token);
 
-      if (!user) {
-        throw new AuthenticationError("User not found");
-      }
+      req.user = {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        permissions: user.permissions,
+        isActive: user.isActive,
+        emailVerified: user.emailVerified,
+      };
 
-      req.user = user;
       next();
-    } catch (jwtError: any) {
-      if (jwtError.name === "TokenExpiredError") {
-        throw new TokenExpiredError();
-      } else if (jwtError.name === "JsonWebTokenError") {
-        throw new AuthenticationError("Invalid token");
+    } catch (authError) {
+      if (authError instanceof TokenExpiredError) {
+        throw authError;
+      } else if (authError instanceof InvalidTokenError) {
+        throw new AuthenticationError('Invalid token');
+      } else if (authError instanceof AccountDeactivatedError) {
+        throw new AuthenticationError('Account deactivated');
       } else {
-        throw new AuthenticationError("Token verification failed");
+        throw new AuthenticationError('Token verification failed');
       }
     }
   } catch (error) {
@@ -127,18 +145,14 @@ export const authenticate = (
 
 // Authorization middleware
 export const authorize = (...roles: string[]) => {
-  return (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): void => {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
-        throw new AuthenticationError("User not authenticated");
+        throw new AuthenticationError('User not authenticated');
       }
 
       if (roles.length > 0 && !roles.includes(req.user.role)) {
-        throw new AuthorizationError(`Required roles: ${roles.join(", ")}`);
+        throw new AuthorizationError(`Required roles: ${roles.join(', ')}`);
       }
 
       next();
@@ -150,32 +164,24 @@ export const authorize = (...roles: string[]) => {
 
 // Permission-based authorization
 export const requirePermissions = (...permissions: string[]) => {
-  return (
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ): void => {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
-        throw new AuthenticationError("User not authenticated");
+        throw new AuthenticationError('User not authenticated');
       }
 
       const userPermissions = req.user.permissions || [];
 
       // Admin has all permissions
-      if (userPermissions.includes("*")) {
+      if (userPermissions.includes('*')) {
         return next();
       }
 
       // Check if user has required permissions
-      const hasPermissions = permissions.every((permission) =>
-        userPermissions.includes(permission)
-      );
+      const hasPermissions = permissions.every(permission => userPermissions.includes(permission));
 
       if (!hasPermissions) {
-        throw new AuthorizationError(
-          `Required permissions: ${permissions.join(", ")}`
-        );
+        throw new AuthorizationError(`Required permissions: ${permissions.join(', ')}`);
       }
 
       next();
@@ -186,59 +192,96 @@ export const requirePermissions = (...permissions: string[]) => {
 };
 
 // Role-based shortcuts
-export const adminOnly = authorize("admin");
-export const moderatorOrAdmin = authorize("moderator", "admin");
-export const userOrAbove = authorize("user", "moderator", "admin");
+export const adminOnly = authorize('admin');
+export const moderatorOrAdmin = authorize('moderator', 'admin');
+export const userOrAbove = authorize('user', 'moderator', 'admin');
 
 // Optional authentication (doesn't throw if no token)
-export const optionalAuth = (
+export const optionalAuth = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next(); // Continue without user
   }
 
   // Use the main authenticate middleware
-  authenticate(req, res, (error) => {
+  await authenticate(req, res, error => {
     if (error) {
       // Log the error but don't throw it
-      console.warn("Optional authentication failed:", error.message);
+      console.warn('Optional authentication failed:', error.message);
     }
     next(); // Continue regardless of auth result
   });
 };
 
-// Generate JWT token (for login endpoints)
-export const generateToken = (
-  userId: string,
-  expiresIn: string = "24h"
-): string => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn });
-};
-
 // Refresh token middleware
-export const refreshToken = (
+export const refreshTokenMiddleware = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
-    if (!req.user) {
-      throw new AuthenticationError("User not authenticated");
+    const refreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
+
+    if (!refreshToken) {
+      throw new AuthenticationError('Refresh token required');
     }
 
-    // Generate new token
-    const newToken = generateToken(req.user.id, "24h");
+    const tokens = await authService.refreshTokens(refreshToken);
 
-    // Add new token to response headers
-    res.setHeader("X-New-Token", newToken);
+    // Attach new tokens to response
+    res.locals.tokens = tokens;
 
     next();
   } catch (error) {
     next(error);
   }
 };
+
+// Middleware to check if user email is verified
+export const requireEmailVerification = (
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+): void => {
+  try {
+    if (!req.user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    if (!req.user.emailVerified) {
+      throw new AuthorizationError('Email verification required');
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requireActiveAccount = (
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+): void => {
+  try {
+    if (!req.user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    if (!req.user.isActive) {
+      throw new AuthorizationError('Account is deactivated');
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Export auth service for use in controllers
+export { authService, userRepository };

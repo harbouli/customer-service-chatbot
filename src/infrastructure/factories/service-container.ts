@@ -1,6 +1,5 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IEventBus } from '@application/events/IEventBus';
 import { ICacheService } from '@application/interfaces/ICacheService';
 import { IEmailService } from '@application/interfaces/IEmailService';
@@ -15,14 +14,12 @@ import { InMemoryChatRepository } from '@infrastructure/repositories/in-memory-c
 import { InMemoryCustomerRepository } from '@infrastructure/repositories/in-memory-customer-repository';
 import { InMemoryProductRepository } from '@infrastructure/repositories/in-memory-product-repository';
 import { WeaviateVectorRepository } from '@infrastructure/repositories/weaviate-vector-repository';
-import {
-  EmailService,
-  EnhancedChatbotService,
-  InMemoryCacheService,
-  NotificationService,
-} from '@infrastructure/services/enhanced-chatbot-service';
+import { EnhancedChatbotService } from '@infrastructure/services/enhanced-chatbot-service';
 import { InMemoryEventBus } from '@infrastructure/services/event-bus-service';
 import { GoogleGenerativeAIService } from '@infrastructure/services/google-generative-ai-service';
+import { MongoDBUserRepository } from '../repositories/mongodb-user-repository';
+import { InMemoryCacheService } from '../services/cache-service';
+import { NotificationService } from '../services/notification-service';
 
 export class ServiceContainer {
   private static instance: ServiceContainer;
@@ -60,6 +57,10 @@ export class ServiceContainer {
   }
 
   private async initializeRepositories(config: ConfigService): Promise<void> {
+    // User Repository (MongoDB)
+    const userRepository = new MongoDBUserRepository();
+    this.register('userRepository', userRepository);
+
     // Customer Repository
     const customerRepository = new InMemoryCustomerRepository();
     this.register('customerRepository', customerRepository);
@@ -84,21 +85,10 @@ export class ServiceContainer {
     console.log('✅ Repositories initialized');
   }
 
-  private async initializeServices(config: ConfigService): Promise<void> {
+  private async initializeServices(_config: ConfigService): Promise<void> {
     // Cache Service
     const cacheService = new InMemoryCacheService();
     this.register('cacheService', cacheService);
-
-    // Email Service
-    const emailConfig = config.getEmail();
-    const emailService = new EmailService(
-      emailConfig.host,
-      emailConfig.port,
-      emailConfig.username,
-      emailConfig.password,
-      emailConfig.fromEmail
-    );
-    this.register('emailService', emailService);
 
     // Notification Service
     const notificationService = new NotificationService();
