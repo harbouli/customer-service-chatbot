@@ -1,6 +1,6 @@
 import { CustomError } from '@shared/errors/custom-error';
 import { NextFunction, Request, Response } from 'express';
-import { body, param, query, ValidationChain } from 'express-validator';
+import { body, param, query, ValidationChain, validationResult } from 'express-validator';
 // ===========================
 // CHAT VALIDATION
 // ===========================
@@ -34,6 +34,44 @@ export const validateChatMessage: ValidationChain[] = [
     .matches(/^[a-zA-Z0-9\-_]+$/)
     .withMessage('Session ID can only contain alphanumeric characters, hyphens, and underscores'),
 ];
+
+export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const errorMessages = errors.array().map(error => error.msg);
+    const errorDetails = errors.array().map(error => ({
+      field: (error as any).param,
+      message: error.msg,
+      value: (error as any).value,
+    }));
+
+    res.status(400).json({
+      success: false,
+      message: `Validation failed: ${errorMessages.join(', ')}`,
+      code: 'VALIDATION_ERROR',
+      errors: errorDetails,
+    });
+    return;
+  }
+
+  next();
+};
+
+// ===========================
+// ADDITIONAL VALIDATION HELPERS
+// ===========================
+
+export const validateObjectId = (fieldName: string = 'id'): ValidationChain => {
+  return param(fieldName)
+    .isString()
+    .notEmpty()
+    .withMessage(`${fieldName} is required`)
+    .isLength({ min: 24, max: 24 })
+    .withMessage(`Invalid ${fieldName} format`)
+    .matches(/^[a-fA-F0-9]{24}$/)
+    .withMessage(`Invalid MongoDB ObjectId format for ${fieldName}`);
+};
 
 export const validateSessionId: ValidationChain[] = [
   param('sessionId')
@@ -597,3 +635,199 @@ export const validateFileUpload: ValidationChain[] = [
     return true;
   }),
 ];
+
+export const validateUpdateUserProfile: ValidationChain[] = [
+  body('firstName')
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage('First name cannot be empty')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters')
+    .trim()
+    .escape()
+    .matches(/^[a-zA-Z\s\-'\\.]+$/)
+    .withMessage('First name can only contain letters, spaces, hyphens, apostrophes, and periods'),
+
+  body('lastName')
+    .optional()
+    .isString()
+    .notEmpty()
+    .withMessage('Last name cannot be empty')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters')
+    .trim()
+    .escape()
+    .matches(/^[a-zA-Z\s\-'\\.]+$/)
+    .withMessage('Last name can only contain letters, spaces, hyphens, apostrophes, and periods'),
+
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Valid email is required')
+    .normalizeEmail()
+    .isLength({ max: 255 })
+    .withMessage('Email cannot exceed 255 characters'),
+
+  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean').toBoolean(),
+
+  body('emailVerified')
+    .optional()
+    .isBoolean()
+    .withMessage('emailVerified must be a boolean')
+    .toBoolean(),
+];
+
+export const validateUpdateUserRole: ValidationChain[] = [
+  param('userId')
+    .isString()
+    .notEmpty()
+    .withMessage('User ID is required')
+    .isLength({ min: 24, max: 24 })
+    .withMessage('Invalid user ID format')
+    .matches(/^[a-fA-F0-9]{24}$/)
+    .withMessage('Invalid MongoDB ObjectId format'),
+
+  body('role')
+    .isString()
+    .isIn(['admin', 'user', 'moderator'])
+    .withMessage('Role must be admin, user, or moderator'),
+
+  body('permissions')
+    .optional()
+    .isArray()
+    .withMessage('Permissions must be an array')
+    .custom(permissions => {
+      const validPermissions = [
+        '*',
+        'chat:read',
+        'chat:write',
+        'products:read',
+        'products:write',
+        'analytics:read',
+        'customers:read',
+        'customers:write',
+        'users:read',
+        'users:write',
+        'admin:read',
+        'admin:write',
+      ];
+
+      return permissions.every(
+        (permission: string) =>
+          typeof permission === 'string' && validPermissions.includes(permission)
+      );
+    })
+    .withMessage('Invalid permissions specified'),
+];
+
+export const validateUserId: ValidationChain[] = [
+  param('userId')
+    .isString()
+    .notEmpty()
+    .withMessage('User ID is required')
+    .isLength({ min: 24, max: 24 })
+    .withMessage('Invalid user ID format')
+    .matches(/^[a-fA-F0-9]{24}$/)
+    .withMessage('Invalid MongoDB ObjectId format'),
+];
+
+export const validateUserSearch: ValidationChain[] = [
+  query('search')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Search term must be between 1-100 characters')
+    .trim()
+    .escape(),
+
+  query('role')
+    .optional()
+    .isString()
+    .isIn(['admin', 'user', 'moderator'])
+    .withMessage('Role must be admin, user, or moderator'),
+
+  query('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be true or false')
+    .toBoolean(),
+
+  query('emailVerified')
+    .optional()
+    .isBoolean()
+    .withMessage('emailVerified must be true or false')
+    .toBoolean(),
+
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be 1 or greater').toInt(),
+
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100')
+    .toInt(),
+];
+
+// ===========================
+// BULK OPERATIONS VALIDATION
+// ===========================
+
+export const validateBulkUserAction: ValidationChain[] = [
+  body('userIds')
+    .isArray({ min: 1, max: 50 })
+    .withMessage('User IDs must be an array with 1-50 items')
+    .custom(userIds => {
+      return userIds.every(
+        (id: string) => typeof id === 'string' && id.length === 24 && /^[a-fA-F0-9]{24}$/.test(id)
+      );
+    })
+    .withMessage('All user IDs must be valid MongoDB ObjectIds'),
+
+  body('action')
+    .isString()
+    .isIn(['activate', 'deactivate', 'delete', 'change-role'])
+    .withMessage('Action must be activate, deactivate, delete, or change-role'),
+
+  body('newRole')
+    .if(body('action').equals('change-role'))
+    .isString()
+    .isIn(['admin', 'user', 'moderator'])
+    .withMessage('New role must be admin, user, or moderator when action is change-role'),
+];
+
+export const validateEmail = (fieldName: string = 'email'): ValidationChain => {
+  return body(fieldName)
+    .isEmail()
+    .withMessage(`Valid ${fieldName} is required`)
+    .normalizeEmail()
+    .isLength({ max: 255 })
+    .withMessage(`${fieldName} cannot exceed 255 characters`);
+};
+
+export const validatePassword = (
+  fieldName: string = 'password',
+  isOptional: boolean = false
+): ValidationChain => {
+  const validator = isOptional ? body(fieldName).optional() : body(fieldName);
+
+  return validator
+    .isString()
+    .isLength({ min: 6, max: 128 })
+    .withMessage(`${fieldName} must be between 6 and 128 characters`)
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage(
+      `${fieldName} must contain at least one lowercase letter, one uppercase letter, and one number`
+    );
+};
+
+export const validateRole = (
+  fieldName: string = 'role',
+  isOptional: boolean = false
+): ValidationChain => {
+  const validator = isOptional ? body(fieldName).optional() : body(fieldName);
+
+  return validator
+    .isString()
+    .isIn(['admin', 'user', 'moderator'])
+    .withMessage(`${fieldName} must be admin, user, or moderator`);
+};

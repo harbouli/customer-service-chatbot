@@ -30,7 +30,10 @@ import { errorHandler } from './presentation/middleware/error-handler';
 import { createChatRoutes } from './presentation/routes/chat-routes';
 import { createCustomerRoutes } from './presentation/routes/customer-routes';
 
+import { ServiceContainer } from './infrastructure';
 import { connectDB, disconnectDB, isDBConnected } from './infrastructure/database';
+import { createDocsRoutes, createMainRouter } from './presentation/routes';
+import { setupRouteLogging } from './utils/setup-route-logging';
 
 dotenv.config();
 
@@ -124,10 +127,12 @@ async function initializeServer() {
     );
 
     const customerController = new CustomerController(createCustomer, getCustomer, updateCustomer);
-
+    const mainRouter = createMainRouter(ServiceContainer.getInstance());
+    app.use('/', mainRouter);
     // Mount routes
     app.use('/api/chat', createChatRoutes(chatController));
     app.use('/api/customers', createCustomerRoutes(customerController));
+    app.use('/', createDocsRoutes());
 
     // Health check
     app.get('/health', async (_, res) => {
@@ -148,18 +153,50 @@ async function initializeServer() {
         name: 'Customer Support Chatbot API',
         version: '1.0.0',
         endpoints: {
+          // EXISTING endpoints
           chat: '/api/chat/message',
           customers: '/api/customers',
           health: '/health',
+          // NEW authentication endpoints
+          auth: {
+            register: '/auth/register',
+            login: '/auth/login',
+            refresh: '/auth/refresh',
+            profile: '/auth/profile',
+            logout: '/auth/logout',
+          },
+          // NEW user management endpoints
+          users: '/api/users (admin only)',
+          // NEW utility endpoints
+          routes: '/api/routes',
+          docs: '/docs',
         },
         features: {
           aiPowered: !!aiService,
           vectorSearch: true,
           contextualResponses: true,
           customerManagement: true,
+          userAuthentication: true, // NEW
+          roleBasedAccess: true, // NEW
+          refreshTokens: true, // NEW
+          passwordReset: true, // NEW
+        },
+        authentication: {
+          type: 'JWT Bearer Token',
+          accessTokenExpiry: '15 minutes',
+          refreshTokenExpiry: '7 days',
+          mockTokens:
+            process.env.NODE_ENV === 'development'
+              ? {
+                  admin: 'mock-admin-token',
+                  user: 'mock-user-token',
+                  moderator: 'mock-moderator-token',
+                }
+              : undefined,
         },
       });
     });
+    setupRouteLogging(app);
 
     // Error handling
     app.use(errorHandler);

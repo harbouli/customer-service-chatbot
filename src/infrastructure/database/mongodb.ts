@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-class MongoDB {
+export class MongoDB {
   private static instance: MongoDB;
   private connected = false;
 
@@ -69,6 +69,7 @@ class MongoDB {
     return this.connected && mongoose.connection.readyState === 1;
   }
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   getConnection() {
     return mongoose.connection;
   }
