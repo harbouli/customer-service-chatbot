@@ -30,14 +30,13 @@ import { errorHandler } from './presentation/middleware/error-handler';
 import { createChatRoutes } from './presentation/routes/chat-routes';
 import { createCustomerRoutes } from './presentation/routes/customer-routes';
 
-import { ServiceContainer } from './infrastructure';
 import { connectDB, disconnectDB, isDBConnected } from './infrastructure/database';
 import { createDocsRoutes, createMainRouter } from './presentation/routes';
 import { setupRouteLogging } from './utils/setup-route-logging';
+const app: Express = express();
 
 dotenv.config();
 
-const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -127,8 +126,8 @@ async function initializeServer() {
     );
 
     const customerController = new CustomerController(createCustomer, getCustomer, updateCustomer);
-    const mainRouter = createMainRouter(ServiceContainer.getInstance());
-    app.use('/', mainRouter);
+    const mainRouter = createMainRouter();
+    app.use('/api', mainRouter);
     // Mount routes
     app.use('/api/chat', createChatRoutes(chatController));
     app.use('/api/customers', createCustomerRoutes(customerController));
@@ -248,10 +247,6 @@ async function startServer() {
 
     const server = app.listen(PORT, () => {
       console.log(`🚀 Customer Support Chatbot server running on port ${PORT}`);
-      console.log(`📍 Health check: http://localhost:${PORT}/health`);
-      console.log(`💬 Chat API: http://localhost:${PORT}/api/chat/message`);
-      console.log(`👥 Customers API: http://localhost:${PORT}/api/customers`);
-      console.log(`📊 API Info: http://localhost:${PORT}/api`);
     });
 
     // Graceful shutdown handling

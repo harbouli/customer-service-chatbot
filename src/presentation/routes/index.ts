@@ -1,29 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  BulkInitializeEmbeddings,
-  CreateCustomer,
-  CreateProduct,
-  DeleteProduct,
-  GetChatAnalytics,
-  GetCustomer,
-  GetCustomerSessions,
-  GetSessionHistory,
-  InitializeProductEmbeddings,
-  ProcessChatMessage,
-  SearchProducts,
-  UpdateCustomer,
-  UpdateProduct,
-} from '@application/use-cases';
-import { ServiceContainer } from '@infrastructure/index';
+
 import { Request, Response, Router } from 'express';
 
-// Import route creators
-import { AdminController } from '../controllers/admin-controller';
-import { AnalyticsController } from '../controllers/analytics-controller';
-import { ChatController } from '../controllers/chat-controller';
-import { CustomerController } from '../controllers/customer-controller';
-import { ProductController } from '../controllers/product-controller';
-
+import { ServiceContainer } from '../../infrastructure';
 import { createAdminRoutes } from './admin-routes';
 import { createAnalyticsRoutes } from './analytics-routes';
 import { createAuthRoutes } from './auth-routes';
@@ -33,87 +12,8 @@ import { createProductRoutes } from './product-routes';
 import { createPublicRoutes } from './public-routes';
 import { createUserManagementRoutes } from './user-management-routes';
 
-export function createApiRoutes(container: ServiceContainer): Router {
-  const router: Router = Router();
-
-  // Get repositories and services from container (EXISTING + NEW)
-  const customerRepository = container.getCustomerRepository();
-  const productRepository = container.getProductRepository();
-  const chatRepository = container.getChatRepository();
-  const vectorRepository = container.getVectorRepository();
-  const chatbotService = container.getChatbotService();
-  const aiService = container.getAIService();
-
-  const processChatMessage = new ProcessChatMessage(
-    chatRepository,
-    customerRepository,
-    chatbotService
-  );
-
-  const getSessionHistory = new GetSessionHistory(chatRepository);
-  const getCustomerSessions = new GetCustomerSessions(chatRepository);
-
-  const createCustomer = new CreateCustomer(customerRepository);
-  const getCustomer = new GetCustomer(customerRepository);
-  const updateCustomer = new UpdateCustomer(customerRepository);
-
-  const createProduct = new CreateProduct(productRepository, vectorRepository, aiService);
-  const updateProduct = new UpdateProduct(productRepository, vectorRepository, aiService);
-  const searchProducts = new SearchProducts(productRepository, chatbotService);
-  const deleteProduct = new DeleteProduct(productRepository, vectorRepository);
-
-  const getChatAnalytics = new GetChatAnalytics(chatRepository, productRepository);
-
-  const initializeProductEmbeddings = new InitializeProductEmbeddings(
-    productRepository,
-    vectorRepository,
-    aiService
-  );
-
-  const bulkInitializeEmbeddings = new BulkInitializeEmbeddings(
-    productRepository,
-    vectorRepository,
-    aiService
-  );
-
-  // Initialize controllers (EXISTING - UNCHANGED)
-  const chatController = new ChatController(
-    processChatMessage,
-    getSessionHistory,
-    getCustomerSessions
-  );
-
-  const customerController = new CustomerController(createCustomer, getCustomer, updateCustomer);
-
-  const productController = new ProductController(
-    createProduct,
-    updateProduct,
-    searchProducts,
-    deleteProduct
-  );
-
-  const analyticsController = new AnalyticsController(getChatAnalytics);
-
-  const adminController = new AdminController(
-    initializeProductEmbeddings,
-    bulkInitializeEmbeddings
-  );
-
-  // Mount route groups (EXISTING + NEW)
-  router.use('/chat', createChatRoutes(chatController));
-  router.use('/customers', createCustomerRoutes(customerController));
-  router.use('/products', createProductRoutes(productController));
-  router.use('/analytics', createAnalyticsRoutes(analyticsController));
-  router.use('/admin', createAdminRoutes(adminController));
-
-  // NEW: Mount user management routes (admin only)
-  router.use('/users', createUserManagementRoutes());
-
-  return router;
-}
-
 // Main router factory (EXISTING - ENHANCED)
-export function createMainRouter(container: ServiceContainer): Router {
+export function createMainRouter(): Router {
   const router: Router = Router();
 
   // Mount public routes (EXISTING)
@@ -121,9 +21,6 @@ export function createMainRouter(container: ServiceContainer): Router {
 
   // NEW: Mount authentication routes (mixed public/private)
   router.use('/auth', createAuthRoutes());
-
-  // Mount API routes (EXISTING)
-  router.use('/api', createApiRoutes(container));
 
   // 404 handler for API routes (EXISTING - ENHANCED)
   router.use('/api/*', (req: Request, res: Response): void => {

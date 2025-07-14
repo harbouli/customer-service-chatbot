@@ -1,4 +1,10 @@
-// src/infrastructure/services/LoggingService.ts
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 export enum LogLevel {
   ERROR = 0,
@@ -15,8 +21,8 @@ export interface LogEntry {
   message: string;
   timestamp: string;
   meta?: any;
-  requestId?: string;
-  userId?: string;
+  requestId?: string | undefined;
+  userId?: string | undefined;
   service?: string;
   module?: string;
   environment?: string;
@@ -50,32 +56,38 @@ export interface LoggingConfig {
 
 export class JSONFormatter implements LogFormatter {
   format(entry: LogEntry): string {
-    return JSON.stringify(entry);
+    try {
+      return JSON.stringify(entry);
+    } catch (error) {
+      return JSON.stringify({
+        ...entry,
+        meta: '[Circular or Non-Serializable]',
+        error: 'JSON serialization failed',
+      });
+    }
   }
 }
 
 export class SimpleFormatter implements LogFormatter {
   format(entry: LogEntry): string {
     const { timestamp, level, message, meta } = entry;
-    const metaStr =
-      meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
+    let metaStr = '';
+
+    if (meta && Object.keys(meta).length > 0) {
+      try {
+        metaStr = ` ${JSON.stringify(meta)}`;
+      } catch (error) {
+        metaStr = ' [Meta: Non-Serializable]';
+      }
+    }
+
     return `${timestamp} [${level.toUpperCase()}]: ${message}${metaStr}`;
   }
 }
 
 export class DetailedFormatter implements LogFormatter {
   format(entry: LogEntry): string {
-    const {
-      timestamp,
-      level,
-      message,
-      meta,
-      requestId,
-      userId,
-      service,
-      module,
-      stack,
-    } = entry;
+    const { timestamp, level, message, meta, requestId, userId, service, module, stack } = entry;
 
     let formatted = `${timestamp} [${level.toUpperCase()}]`;
 
@@ -87,7 +99,11 @@ export class DetailedFormatter implements LogFormatter {
     formatted += `: ${message}`;
 
     if (meta && Object.keys(meta).length > 0) {
-      formatted += `\nMeta: ${JSON.stringify(meta, null, 2)}`;
+      try {
+        formatted += `\nMeta: ${JSON.stringify(meta, null, 2)}`;
+      } catch (error) {
+        formatted += `\nMeta: [Non-Serializable Object]`;
+      }
     }
 
     if (stack) {
@@ -100,27 +116,29 @@ export class DetailedFormatter implements LogFormatter {
 
 export class ColorFormatter implements LogFormatter {
   private colors = {
-    ERROR: "\x1b[31m", // Red
-    WARN: "\x1b[33m", // Yellow
-    INFO: "\x1b[36m", // Cyan
-    HTTP: "\x1b[35m", // Magenta
-    VERBOSE: "\x1b[37m", // White
-    DEBUG: "\x1b[32m", // Green
-    SILLY: "\x1b[90m", // Gray
-    RESET: "\x1b[0m", // Reset
+    ERROR: '\x1b[31m', // Red
+    WARN: '\x1b[33m', // Yellow
+    INFO: '\x1b[36m', // Cyan
+    HTTP: '\x1b[35m', // Magenta
+    VERBOSE: '\x1b[37m', // White
+    DEBUG: '\x1b[32m', // Green
+    SILLY: '\x1b[90m', // Gray
+    RESET: '\x1b[0m', // Reset
   };
 
   format(entry: LogEntry): string {
     const { timestamp, level, message, meta } = entry;
-    const color =
-      this.colors[level.toUpperCase() as keyof typeof this.colors] ||
-      this.colors.INFO;
+    const color = this.colors[level.toUpperCase() as keyof typeof this.colors] || this.colors.INFO;
     const reset = this.colors.RESET;
 
     let formatted = `${color}${timestamp} [${level.toUpperCase()}]${reset}: ${message}`;
 
     if (meta && Object.keys(meta).length > 0) {
-      formatted += ` ${JSON.stringify(meta)}`;
+      try {
+        formatted += ` ${JSON.stringify(meta)}`;
+      } catch (error) {
+        formatted += ` [Meta: Non-Serializable]`;
+      }
     }
 
     return formatted;
@@ -132,7 +150,7 @@ export class ColorFormatter implements LogFormatter {
 // ===========================
 
 export class ConsoleTransport implements LogTransport {
-  name = "console";
+  name = 'console';
 
   constructor(
     private formatter: LogFormatter = new ColorFormatter(),
@@ -140,19 +158,23 @@ export class ConsoleTransport implements LogTransport {
   ) {}
 
   log(entry: LogEntry): void {
-    const formatted = this.formatter.format(entry);
+    try {
+      const formatted = this.formatter.format(entry);
 
-    if (this.logToStderr || entry.level === "ERROR" || entry.level === "WARN") {
-      console.error(formatted);
-    } else {
-      console.log(formatted);
+      if (this.logToStderr || entry.level === 'ERROR' || entry.level === 'WARN') {
+        console.error(formatted);
+      } else {
+        console.log(formatted);
+      }
+    } catch (error) {
+      console.error('Console transport error:', error);
     }
   }
 }
 
 export class FileTransport implements LogTransport {
-  name = "file";
-  private writeStream?: any;
+  name = 'file';
+  private writeStream?: fs.WriteStream | undefined;
 
   constructor(
     private filename: string,
@@ -165,23 +187,20 @@ export class FileTransport implements LogTransport {
 
   private initializeStream(): void {
     try {
-      const fs = require("fs");
-      const path = require("path");
-
       // Ensure directory exists
       const dir = path.dirname(this.filename);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      this.writeStream = fs.createWriteStream(this.filename, { flags: "a" });
+      this.writeStream = fs.createWriteStream(this.filename, { flags: 'a' });
 
       // Handle stream errors
-      this.writeStream.on("error", (error: Error) => {
-        console.error("File transport error:", error);
+      this.writeStream.on('error', (error: Error) => {
+        console.error('File transport error:', error);
       });
     } catch (error) {
-      console.error("Failed to initialize file transport:", error);
+      console.error('Failed to initialize file transport:', error);
     }
   }
 
@@ -190,33 +209,30 @@ export class FileTransport implements LogTransport {
 
     try {
       const formatted = this.formatter.format(entry);
-      this.writeStream.write(`${formatted  }\n`);
+      this.writeStream.write(`${formatted}\n`);
 
       // Check file size and rotate if necessary
       this.checkRotation();
     } catch (error) {
-      console.error("Error writing to log file:", error);
+      console.error('Error writing to log file:', error);
     }
   }
 
   private checkRotation(): void {
     try {
-      const fs = require("fs");
-      const stats = fs.statSync(this.filename);
+      if (!fs.existsSync(this.filename)) return;
 
+      const stats = fs.statSync(this.filename);
       if (stats.size > this.maxSize) {
         this.rotateFile();
       }
     } catch (error) {
-      console.error("Error checking file rotation:", error);
+      console.error('Error checking file rotation:', error);
     }
   }
 
   private rotateFile(): void {
     try {
-      const fs = require("fs");
-      const path = require("path");
-
       // Close current stream
       this.writeStream?.end();
 
@@ -240,12 +256,14 @@ export class FileTransport implements LogTransport {
 
       // Move current file to .1
       const rotatedFile = path.join(dirname, `${basename}.1${ext}`);
-      fs.renameSync(this.filename, rotatedFile);
+      if (fs.existsSync(this.filename)) {
+        fs.renameSync(this.filename, rotatedFile);
+      }
 
       // Recreate stream
       this.initializeStream();
     } catch (error) {
-      console.error("Error rotating log file:", error);
+      console.error('Error rotating log file:', error);
       this.initializeStream(); // Try to recreate stream
     }
   }
@@ -253,13 +271,15 @@ export class FileTransport implements LogTransport {
   destroy(): void {
     if (this.writeStream) {
       this.writeStream.end();
-      this.writeStream = null;
+      this.writeStream = undefined;
     }
   }
 }
 
 export class HttpTransport implements LogTransport {
-  name = "http";
+  name = 'http';
+  private batch: LogEntry[] = [];
+  private batchTimer?: NodeJS.Timeout | undefined;
 
   constructor(
     private url: string,
@@ -269,9 +289,6 @@ export class HttpTransport implements LogTransport {
   ) {
     this.startBatchProcessor();
   }
-
-  private batch: LogEntry[] = [];
-  private batchTimer?: NodeJS.Timeout;
 
   log(entry: LogEntry): void {
     this.batch.push(entry);
@@ -296,93 +313,51 @@ export class HttpTransport implements LogTransport {
     this.batch = [];
 
     try {
-      const fetch = (await import("node-fetch")).default;
+      // Use dynamic import for node-fetch if available, fallback to fetch if in browser
+      let fetchFn: any;
 
-      await fetch(this.url, {
-        method: "POST",
+      if (typeof fetch !== 'undefined') {
+        fetchFn = fetch;
+      } else {
+        try {
+          const nodeFetch = await import('node-fetch');
+          fetchFn = nodeFetch.default;
+        } catch (error) {
+          console.error('HTTP transport requires node-fetch to be installed');
+          return;
+        }
+      }
+
+      await fetchFn(this.url, {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          logs: logsToSend.map((entry) => this.formatter.format(entry)),
+          logs: logsToSend.map(entry => this.formatter.format(entry)),
           timestamp: new Date().toISOString(),
         }),
       });
     } catch (error) {
-      console.error("Failed to send logs to HTTP endpoint:", error);
-      // Re-add failed logs to batch for retry
-      this.batch.unshift(...logsToSend);
+      console.error('Failed to send logs to HTTP endpoint:', error);
+      // Re-add failed logs to batch for retry (limit to prevent memory issues)
+      if (this.batch.length < 1000) {
+        this.batch.unshift(...logsToSend);
+      }
     }
   }
 
   destroy(): void {
     if (this.batchTimer) {
       clearInterval(this.batchTimer);
+      this.batchTimer = undefined;
     }
 
     // Send remaining logs
     if (this.batch.length > 0) {
-      this.flush();
-    }
-  }
-}
-
-export class DatabaseTransport implements LogTransport {
-  name = "database";
-  private buffer: LogEntry[] = [];
-  private flushTimer?: NodeJS.Timeout;
-
-  constructor(
-    private connectionString: string,
-    private tableName: string = "logs",
-    private batchSize: number = 50,
-    private flushInterval: number = 10000 // 10 seconds
-  ) {
-    this.startBatchProcessor();
-  }
-
-  log(entry: LogEntry): void {
-    this.buffer.push(entry);
-
-    if (this.buffer.length >= this.batchSize) {
-      this.flush();
-    }
-  }
-
-  private startBatchProcessor(): void {
-    this.flushTimer = setInterval(() => {
-      if (this.buffer.length > 0) {
-        this.flush();
-      }
-    }, this.flushInterval);
-  }
-
-  private async flush(): Promise<void> {
-    if (this.buffer.length === 0) return;
-
-    const logsToSave = [...this.buffer];
-    this.buffer = [];
-
-    try {
-      // Mock database save - replace with actual database implementation
-      console.log(`Saving ${logsToSave.length} logs to database...`);
-
-      // Example with a hypothetical database client:
-      // await this.dbClient.insert(this.tableName, logsToSave);
-    } catch (error) {
-      console.error("Failed to save logs to database:", error);
-      // Re-add failed logs for retry
-      this.buffer.unshift(...logsToSave);
-    }
-  }
-
-  destroy(): void {
-    if (this.flushTimer) {
-      clearInterval(this.flushTimer);
-    }
-
-    if (this.buffer.length > 0) {
-      this.flush();
+      this.flush().catch(error => {
+        console.error('Error flushing remaining logs:', error);
+      });
     }
   }
 }
@@ -395,6 +370,7 @@ export class LoggingService {
   private static instance: LoggingService;
   private config: LoggingConfig;
   private defaultMeta: Record<string, any>;
+  private isDestroyed = false;
 
   private constructor(config?: Partial<LoggingConfig>) {
     this.config = {
@@ -408,29 +384,36 @@ export class LoggingService {
     };
 
     this.defaultMeta = {
-      service: "customer-support-chatbot",
-      environment: process.env.NODE_ENV || "development",
+      service: 'customer-support-chatbot',
+      environment: process.env.NODE_ENV || 'development',
       pid: process.pid,
-      hostname: require("os").hostname(),
+      hostname: os.hostname(),
       ...this.config.defaultMeta,
     };
 
+    this.setupErrorHandlers();
+  }
+
+  private setupErrorHandlers(): void {
     // Handle uncaught exceptions
-    process.on("uncaughtException", (error) => {
-      this.error("Uncaught Exception", {
+    process.on('uncaughtException', error => {
+      this.error('Uncaught Exception', {
         error: error.message,
         stack: error.stack,
       });
       if (this.config.exitOnError) {
-        process.exit(1);
+        setTimeout(() => process.exit(1), 1000); // Give time for logs to flush
       }
     });
 
     // Handle unhandled promise rejections
-    process.on("unhandledRejection", (reason, promise) => {
-      this.error("Unhandled Promise Rejection", { reason, promise });
+    process.on('unhandledRejection', reason => {
+      this.error('Unhandled Promise Rejection', {
+        reason: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
+      });
       if (this.config.exitOnError) {
-        process.exit(1);
+        setTimeout(() => process.exit(1), 1000); // Give time for logs to flush
       }
     });
   }
@@ -448,26 +431,48 @@ export class LoggingService {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    return !this.config.silent && level <= this.config.level;
+    return !this.isDestroyed && !this.config.silent && level <= this.config.level;
   }
 
   private sanitizeMeta(meta: any): any {
     if (!meta) return meta;
 
     try {
-      const serialized = JSON.stringify(meta);
+      // Handle circular references and non-serializable objects
+      const seen = new WeakSet();
+      const sanitized = JSON.parse(
+        JSON.stringify(meta, (_key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular Reference]';
+            }
+            seen.add(value);
+          }
+          if (typeof value === 'function') {
+            return '[Function]';
+          }
+          if (typeof value === 'symbol') {
+            return '[Symbol]';
+          }
+          return value;
+        })
+      );
 
+      const serialized = JSON.stringify(sanitized);
       if (serialized.length > this.config.maxMetaSize!) {
         return {
-          ...meta,
+          ...sanitized,
           _truncated: true,
           _originalSize: serialized.length,
         };
       }
 
-      return meta;
+      return sanitized;
     } catch (error) {
-      return { _serializationError: "Failed to serialize meta object" };
+      return {
+        _serializationError: 'Failed to serialize meta object',
+        _error: error instanceof Error ? error.message : String(error),
+      };
     }
   }
 
@@ -505,9 +510,15 @@ export class LoggingService {
     const entry = this.createLogEntry(level, message, meta, requestId, userId);
 
     // Send to all transports
-    this.config.transports.forEach((transport) => {
+    this.config.transports.forEach(transport => {
       try {
-        transport.log(entry);
+        const result = transport.log(entry);
+        // Handle async transports
+        if (result instanceof Promise) {
+          result.catch(error => {
+            console.error(`Error in async transport ${transport.name}:`, error);
+          });
+        }
       } catch (error) {
         console.error(`Error in transport ${transport.name}:`, error);
       }
@@ -515,60 +526,41 @@ export class LoggingService {
   }
 
   // Public logging methods
-  error(
-    message: string,
-    meta?: any,
-    requestId?: string,
-    userId?: string
-  ): void {
+  error(message: string, meta?: any, requestId?: string, userId?: string): void {
     // If meta is an Error object, extract useful information
     if (meta instanceof Error) {
       meta = {
+        name: meta.name,
+        message: meta.message,
         stack: meta.stack,
-        ...meta,
       };
     }
 
-    this.log("ERROR", message, meta, requestId, userId);
+    this.log('ERROR', message, meta, requestId, userId);
   }
 
   warn(message: string, meta?: any, requestId?: string, userId?: string): void {
-    this.log("WARN", message, meta, requestId, userId);
+    this.log('WARN', message, meta, requestId, userId);
   }
 
   info(message: string, meta?: any, requestId?: string, userId?: string): void {
-    this.log("INFO", message, meta, requestId, userId);
+    this.log('INFO', message, meta, requestId, userId);
   }
 
   http(message: string, meta?: any, requestId?: string, userId?: string): void {
-    this.log("HTTP", message, meta, requestId, userId);
+    this.log('HTTP', message, meta, requestId, userId);
   }
 
-  verbose(
-    message: string,
-    meta?: any,
-    requestId?: string,
-    userId?: string
-  ): void {
-    this.log("VERBOSE", message, meta, requestId, userId);
+  verbose(message: string, meta?: any, requestId?: string, userId?: string): void {
+    this.log('VERBOSE', message, meta, requestId, userId);
   }
 
-  debug(
-    message: string,
-    meta?: any,
-    requestId?: string,
-    userId?: string
-  ): void {
-    this.log("DEBUG", message, meta, requestId, userId);
+  debug(message: string, meta?: any, requestId?: string, userId?: string): void {
+    this.log('DEBUG', message, meta, requestId, userId);
   }
 
-  silly(
-    message: string,
-    meta?: any,
-    requestId?: string,
-    userId?: string
-  ): void {
-    this.log("SILLY", message, meta, requestId, userId);
+  silly(message: string, meta?: any, requestId?: string, userId?: string): void {
+    this.log('SILLY', message, meta, requestId, userId);
   }
 
   // Utility methods
@@ -585,13 +577,16 @@ export class LoggingService {
   }
 
   removeTransport(transportName: string): void {
-    const index = this.config.transports.findIndex(
-      (t) => t.name === transportName
-    );
+    const index = this.config.transports.findIndex(t => t.name === transportName);
     if (index >= 0) {
       const transport = this.config.transports[index];
-      if (transport.destroy) {
-        transport.destroy();
+      if (transport?.destroy) {
+        const result = transport.destroy();
+        if (result instanceof Promise) {
+          result.catch(error => {
+            console.error(`Error destroying transport ${transportName}:`, error);
+          });
+        }
       }
       this.config.transports.splice(index, 1);
     }
@@ -632,11 +627,11 @@ export class LoggingService {
 
       if (result instanceof Promise) {
         return result
-          .then((value) => {
+          .then(value => {
             logCompletion(Date.now() - start);
             return value;
           })
-          .catch((error) => {
+          .catch(error => {
             logCompletion(Date.now() - start, error);
             throw error;
           });
@@ -653,47 +648,41 @@ export class LoggingService {
   // Log with specific module context
   module(moduleName: string) {
     return {
-      error: (
-        message: string,
-        meta?: any,
-        requestId?: string,
-        userId?: string
-      ) =>
+      error: (message: string, meta?: any, requestId?: string, userId?: string) =>
         this.error(message, { ...meta, module: moduleName }, requestId, userId),
-      warn: (
-        message: string,
-        meta?: any,
-        requestId?: string,
-        userId?: string
-      ) =>
+      warn: (message: string, meta?: any, requestId?: string, userId?: string) =>
         this.warn(message, { ...meta, module: moduleName }, requestId, userId),
-      info: (
-        message: string,
-        meta?: any,
-        requestId?: string,
-        userId?: string
-      ) =>
+      info: (message: string, meta?: any, requestId?: string, userId?: string) =>
         this.info(message, { ...meta, module: moduleName }, requestId, userId),
-      debug: (
-        message: string,
-        meta?: any,
-        requestId?: string,
-        userId?: string
-      ) =>
+      debug: (message: string, meta?: any, requestId?: string, userId?: string) =>
         this.debug(message, { ...meta, module: moduleName }, requestId, userId),
+      verbose: (message: string, meta?: any, requestId?: string, userId?: string) =>
+        this.verbose(message, { ...meta, module: moduleName }, requestId, userId),
+      http: (message: string, meta?: any, requestId?: string, userId?: string) =>
+        this.http(message, { ...meta, module: moduleName }, requestId, userId),
+      silly: (message: string, meta?: any, requestId?: string, userId?: string) =>
+        this.silly(message, { ...meta, module: moduleName }, requestId, userId),
     };
   }
 
   // Destroy all transports
   async destroy(): Promise<void> {
-    const destroyPromises = this.config.transports.map((transport) => {
+    this.isDestroyed = true;
+
+    const destroyPromises = this.config.transports.map(transport => {
       if (transport.destroy) {
-        return transport.destroy();
+        const result = transport.destroy();
+        return result instanceof Promise ? result : Promise.resolve();
       }
       return Promise.resolve();
     });
 
-    await Promise.all(destroyPromises);
+    try {
+      await Promise.all(destroyPromises);
+    } catch (error) {
+      console.error('Error destroying some transports:', error);
+    }
+
     this.config.transports = [];
   }
 }
@@ -711,8 +700,8 @@ export function createProductionLogger(): LoggingService {
     level: LogLevel.INFO,
     transports: [
       new ConsoleTransport(new JSONFormatter()),
-      new FileTransport("./logs/app.log", new JSONFormatter()),
-      new FileTransport("./logs/error.log", new JSONFormatter()),
+      new FileTransport('./logs/app.log', new JSONFormatter()),
+      new FileTransport('./logs/error.log', new JSONFormatter()),
     ],
     exitOnError: false,
   });
@@ -723,7 +712,7 @@ export function createDevelopmentLogger(): LoggingService {
     level: LogLevel.DEBUG,
     transports: [
       new ConsoleTransport(new ColorFormatter()),
-      new FileTransport("./logs/dev.log", new DetailedFormatter()),
+      new FileTransport('./logs/dev.log', new DetailedFormatter()),
     ],
     exitOnError: false,
   });
@@ -745,17 +734,17 @@ export function createRequestLogger() {
   const logger = LoggingService.getInstance();
 
   return (req: any, res: any, next: any) => {
-    const requestId = req.id || "unknown";
+    const requestId = req.id || req.headers['x-request-id'] || 'unknown';
     const userId = req.user?.id;
 
     // Log request
     logger.http(
-      "Incoming request",
+      'Incoming request',
       {
         method: req.method,
         url: req.url,
-        userAgent: req.get("User-Agent"),
-        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip || req.connection.remoteAddress,
       },
       requestId,
       userId
@@ -765,12 +754,16 @@ export function createRequestLogger() {
     const originalSend = res.send;
     res.send = function (body: any) {
       logger.http(
-        "Request completed",
+        'Request completed',
         {
           method: req.method,
           url: req.url,
           statusCode: res.statusCode,
-          responseSize: body ? body.length : 0,
+          responseSize: body
+            ? typeof body === 'string'
+              ? body.length
+              : JSON.stringify(body).length
+            : 0,
         },
         requestId,
         userId
@@ -789,12 +782,12 @@ export function createRequestLogger() {
 
 // Create default instance based on environment
 const defaultLogger = (() => {
-  const env = process.env.NODE_ENV || "development";
+  const env = process.env.NODE_ENV || 'development';
 
   switch (env) {
-    case "production":
+    case 'production':
       return createProductionLogger();
-    case "test":
+    case 'test':
       return createTestLogger();
     default:
       return createDevelopmentLogger();

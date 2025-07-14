@@ -1,33 +1,30 @@
-import { createCompressionMiddleware } from "./compression";
-import { createCorsMiddleware } from "./cors";
-import { healthCheckMiddleware } from "./health-check";
+import { createCompressionMiddleware } from './compression';
+import { createCorsMiddleware } from './cors';
+import { healthCheckMiddleware } from './health-check';
 import {
   createAdminRateLimitMiddleware,
   createChatRateLimitMiddleware,
   createRateLimitMiddleware,
-} from "./rate-limiting";
-import { requestIdMiddleware } from "./request-id";
-import { requestLoggingMiddleware } from "./request-logging";
-import {
-  additionalSecurityHeaders,
-  createSecurityMiddleware,
-} from "./security";
-import { createTimeoutMiddleware } from "./timeout";
+} from './rate-limiting';
+import { requestIdMiddleware } from './request-id';
+import { requestLoggingMiddleware } from './request-logging';
+import { additionalSecurityHeaders, createSecurityMiddleware } from './security';
+import { createTimeoutMiddleware } from './timeout';
 
-export * from "./validation";
-export * from "./error-handler";
-export * from "./authentication";
-export * from "./cors";
-export * from "./rate-limiting";
-export * from "./request-logging";
-export * from "./security";
-export * from "./compression";
-export * from "./request-id";
-export * from "./timeout";
-export * from "./body-parser";
-export * from "./health-check";
+export * from './authentication';
+export * from './body-parser';
+export * from './compression';
+export * from './cors';
+export * from './error-handler';
+export * from './health-check';
+export * from './rate-limiting';
+export * from './request-id';
+export * from './request-logging';
+export * from './security';
+export * from './timeout';
+export * from './validation';
 
-export function createCommonMiddleware() {
+export function createCommonMiddleware(): Record<string, any> {
   return {
     security: createSecurityMiddleware(),
     additionalSecurity: additionalSecurityHeaders(),
@@ -44,9 +41,8 @@ export function createCommonMiddleware() {
 }
 
 // Middleware configuration for different environments
-export function createMiddlewareStack(
-  environment: "development" | "production" | "test"
-) {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function createMiddlewareStack(environment: 'development' | 'production' | 'test') {
   const common = createCommonMiddleware();
 
   const baseStack = [
@@ -59,18 +55,13 @@ export function createMiddlewareStack(
   ];
 
   switch (environment) {
-    case "production":
-      return [
-        ...baseStack,
-        common.rateLimit,
-        common.requestLogging,
-        common.healthCheck,
-      ];
+    case 'production':
+      return [...baseStack, common.rateLimit, common.requestLogging, common.healthCheck];
 
-    case "development":
+    case 'development':
       return [...baseStack, common.requestLogging, common.healthCheck];
 
-    case "test":
+    case 'test':
       return [common.requestId, common.cors, common.healthCheck];
 
     default:

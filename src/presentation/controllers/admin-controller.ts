@@ -1,8 +1,5 @@
-import {
-  BulkInitializeEmbeddings,
-  InitializeProductEmbeddings,
-} from "@application/use-cases";
-import { Request, Response } from "express";
+import { BulkInitializeEmbeddings, InitializeProductEmbeddings } from '@application/use-cases';
+import { Request, Response } from 'express';
 
 export class AdminController {
   constructor(
@@ -19,15 +16,15 @@ export class AdminController {
       res.status(200).json({
         success: true,
         data: result,
-        message: "Product embeddings initialized successfully",
+        message: 'Product embeddings initialized successfully',
       });
     } catch (error) {
-      console.error("Initialize embeddings error:", error);
+      console.error('Initialize embeddings error:', error);
 
       res.status(500).json({
         success: false,
-        error: "Failed to initialize embeddings",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: 'Failed to initialize embeddings',
+        details: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -40,65 +37,60 @@ export class AdminController {
       if (!Array.isArray(productIds)) {
         res.status(400).json({
           success: false,
-          error: "productIds must be an array",
+          error: 'productIds must be an array',
         });
         return;
       }
 
-      const result = await this.initializeEmbeddingsUseCase.executeForProducts(
-        productIds,
-        options
-      );
+      const result = await this.initializeEmbeddingsUseCase.executeForProducts(productIds, options);
 
       res.status(200).json({
         success: true,
         data: result,
-        message: "Product embeddings initialized for specific products",
+        message: 'Product embeddings initialized for specific products',
       });
     } catch (error) {
-      console.error("Initialize specific embeddings error:", error);
+      console.error('Initialize specific embeddings error:', error);
 
       res.status(500).json({
         success: false,
-        error: "Failed to initialize embeddings for specific products",
+        error: 'Failed to initialize embeddings for specific products',
       });
     }
   }
 
   async getEmbeddingStatus(req: Request, res: Response): Promise<void> {
     try {
-      const status =
-        await this.initializeEmbeddingsUseCase.getInitializationStatus();
+      const status = await this.initializeEmbeddingsUseCase.getInitializationStatus();
 
       res.status(200).json({
         success: true,
         data: status,
       });
     } catch (error) {
-      console.error("Get embedding status error:", error);
+      console.error('Get embedding status error:', error);
 
       res.status(500).json({
         success: false,
-        error: "Failed to get embedding status",
+        error: 'Failed to get embedding status',
       });
     }
   }
 
   async validateEmbeddings(req: Request, res: Response): Promise<void> {
     try {
-      const validation =
-        await this.initializeEmbeddingsUseCase.validateEmbeddings();
+      const validation = await this.initializeEmbeddingsUseCase.validateEmbeddings();
 
       res.status(200).json({
         success: true,
         data: validation,
       });
     } catch (error) {
-      console.error("Validate embeddings error:", error);
+      console.error('Validate embeddings error:', error);
 
       res.status(500).json({
         success: false,
-        error: "Failed to validate embeddings",
+        error: 'Failed to validate embeddings',
       });
     }
   }
@@ -109,14 +101,14 @@ export class AdminController {
 
       res.status(200).json({
         success: true,
-        message: "Cache cleared successfully",
+        message: 'Cache cleared successfully',
       });
     } catch (error) {
-      console.error("Clear cache error:", error);
+      console.error('Clear cache error:', error);
 
       res.status(500).json({
         success: false,
-        error: "Failed to clear cache",
+        error: 'Failed to clear cache',
       });
     }
   }
