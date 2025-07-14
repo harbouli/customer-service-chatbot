@@ -30,6 +30,8 @@ import { errorHandler } from './presentation/middleware/error-handler';
 import { createChatRoutes } from './presentation/routes/chat-routes';
 import { createCustomerRoutes } from './presentation/routes/customer-routes';
 
+import { connectDB, disconnectDB, isDBConnected } from './infrastructure/database';
+
 dotenv.config();
 
 const app: Express = express();
@@ -128,14 +130,14 @@ async function initializeServer() {
     app.use('/api/customers', createCustomerRoutes(customerController));
 
     // Health check
-    app.get('/health', (_, res) => {
+    app.get('/health', async (_, res) => {
       res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         services: {
           ai: !!aiService,
+          database: isDBConnected() ? 'connected' : 'disconnected',
           vector: true,
-          database: true,
         },
       });
     });
@@ -205,6 +207,7 @@ async function initializeServer() {
 async function startServer() {
   try {
     await initializeServer();
+    await connectDB();
 
     const server = app.listen(PORT, () => {
       console.log(`🚀 Customer Support Chatbot server running on port ${PORT}`);
@@ -218,9 +221,8 @@ async function startServer() {
     const gracefulShutdown = (signal: string) => {
       console.log(`\n📋 Received ${signal}, starting graceful shutdown...`);
 
-      server.close(() => {
-        console.log('🔌 HTTP server closed');
-        console.log('✅ Graceful shutdown completed');
+      server.close(async () => {
+        await disconnectDB();
         process.exit(0);
       });
 

@@ -1,18 +1,15 @@
-import { ConfigService } from "@infrastructure/config/app-config";
-import helmet from "helmet";
+import helmet from 'helmet';
 
 export function createSecurityMiddleware() {
-  const config = ConfigService.getInstance();
-
   return helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         scriptSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "https:", "blob:"],
-        connectSrc: ["'self'", "wss:", "ws:"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+        connectSrc: ["'self'", 'wss:', 'ws:'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
         frameSrc: ["'none'"],
@@ -21,10 +18,10 @@ export function createSecurityMiddleware() {
       },
     },
     crossOriginEmbedderPolicy: false, // Disable for API compatibility
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
-    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     dnsPrefetchControl: { allow: false },
-    frameguard: { action: "deny" },
+    frameguard: { action: 'deny' },
     hidePoweredBy: true,
     hsts: {
       maxAge: 31536000, // 1 year
@@ -35,7 +32,7 @@ export function createSecurityMiddleware() {
     noSniff: true,
     originAgentCluster: true,
     permittedCrossDomainPolicies: false,
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     xssFilter: true,
   });
 }
@@ -44,18 +41,15 @@ export function createSecurityMiddleware() {
 export function additionalSecurityHeaders() {
   return (req: any, res: any, next: any) => {
     // API-specific security headers
-    res.setHeader("X-API-Version", "1.0.0");
-    res.setHeader("X-Robots-Tag", "noindex, nofollow");
-    res.setHeader(
-      "Cache-Control",
-      "no-store, no-cache, must-revalidate, private"
-    );
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
+    res.setHeader('X-API-Version', '1.0.0');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
 
     // Remove server information
-    res.removeHeader("X-Powered-By");
-    res.removeHeader("Server");
+    res.removeHeader('X-Powered-By');
+    res.removeHeader('Server');
 
     next();
   };

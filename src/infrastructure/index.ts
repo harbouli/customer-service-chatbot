@@ -1,25 +1,26 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ===========================
 // REPOSITORIES
 
-import { AppConfig, ConfigService } from "./config/app-config";
-import { ServiceContainer } from "./factories/service-container";
-import { HealthChecker, HealthCheckResult } from "./health/health-checker";
-import { Metrics, MetricsCollector } from "./monitoring/metrics-collector";
-import { InMemoryChatRepository } from "./repositories/in-memory-chat-repository";
-import { InMemoryCustomerRepository } from "./repositories/in-memory-customer-repository";
-import { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
+import { AppConfig, ConfigService } from './config/app-config';
+import { ServiceContainer } from './factories/service-container';
+import { HealthChecker, HealthCheckResult } from './health/health-checker';
+import { Metrics, MetricsCollector } from './monitoring/metrics-collector';
+import { InMemoryChatRepository } from './repositories/in-memory-chat-repository';
+import { InMemoryCustomerRepository } from './repositories/in-memory-customer-repository';
+import { InMemoryProductRepository } from './repositories/in-memory-product-repository';
 
 // ===========================
-export { InMemoryCustomerRepository } from "./repositories/in-memory-customer-repository";
-export { InMemoryProductRepository } from "./repositories/in-memory-product-repository";
-export { InMemoryChatRepository } from "./repositories/in-memory-chat-repository";
-export { WeaviateVectorRepository } from "./repositories/weaviate-vector-repository";
+export { InMemoryChatRepository } from './repositories/in-memory-chat-repository';
+export { InMemoryCustomerRepository } from './repositories/in-memory-customer-repository';
+export { InMemoryProductRepository } from './repositories/in-memory-product-repository';
+export { WeaviateVectorRepository } from './repositories/weaviate-vector-repository';
 
 // ===========================
 // SERVICES
 // ===========================
-export { GoogleGenerativeAIService } from "./services/google-generative-ai-service";
-export { EnhancedChatbotService } from "./services/enhanced-chatbot-service";
+export { EnhancedChatbotService } from './services/enhanced-chatbot-service';
+export { GoogleGenerativeAIService } from './services/google-generative-ai-service';
 
 // ===========================
 // DATABASE
@@ -28,67 +29,64 @@ export {
   DatabaseConfig,
   IDatabaseConnection,
   MockDatabaseConnection,
-} from "./database/database-connection";
+} from './database/database-connection';
 
 // ===========================
 // CONFIGURATION
 // ===========================
 export {
-  ServerConfig,
   AIConfig,
-  VectorConfig,
-  CacheConfig,
-  RateLimitConfig,
-  EmailConfig,
   AppConfig,
+  CacheConfig,
   ConfigService,
-} from "./config/app-config";
+  EmailConfig,
+  RateLimitConfig,
+  ServerConfig,
+  VectorConfig,
+} from './config/app-config';
 
 // ===========================
 // HEALTH & MONITORING
 // ===========================
-export { HealthCheckResult, HealthChecker } from "./health/health-checker";
+export { HealthChecker, HealthCheckResult } from './health/health-checker';
 
-export { Metrics, MetricsCollector } from "./monitoring/metrics-collector";
+export { Metrics, MetricsCollector } from './monitoring/metrics-collector';
 
 // ===========================
 // MIDDLEWARE
 // ===========================
-export { metricsMiddleware } from "./middleware/metrics-middleware";
+export { metricsMiddleware } from './middleware/metrics-middleware';
 
 // ===========================
 // FACTORIES & CONTAINERS
 // ===========================
-export { ServiceContainer } from "./factories/service-container";
+export { ServiceContainer } from './factories/service-container';
 
 // ===========================
 // TYPE DEFINITIONS
 // ===========================
 
 // Repository type exports for easier importing
-export type { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
+export type { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
 
-export type { IProductRepository } from "@domain/repositories/IProductRepository";
+export type { IProductRepository } from '@domain/repositories/IProductRepository';
 
-export type { IChatRepository } from "@domain/repositories/IChatRepository";
+export type { IChatRepository } from '@domain/repositories/IChatRepository';
 
-export type { IVectorRepository } from "@domain/repositories/IVectorRepository";
+export type { IVectorRepository } from '@domain/repositories/IVectorRepository';
 
 // Service type exports
-export type {
-  IChatbotService,
-  IGenerativeAIService,
-} from "@domain/services/chatbot-service";
+export type { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
 
-export type { ICacheService } from "@application/interfaces/ICacheService";
+export type { ICacheService } from '@application/interfaces/ICacheService';
 
-export type { IEmailService } from "@application/interfaces/IEmailService";
+export type { IEmailService } from '@application/interfaces/IEmailService';
 
-export type { INotificationService } from "@application/interfaces/INotificationService";
+export type { INotificationService } from '@application/interfaces/INotificationService';
 
-export type { IEventBus } from "@application/events/IEventBus";
+export type { IEventBus } from '@application/events/IEventBus';
 
-export type { IEventHandler } from "@application/events/IEventHandler";
+export type { IEventHandler } from '@application/events/IEventHandler';
 
 // ===========================
 // INFRASTRUCTURE FACTORY
@@ -99,12 +97,12 @@ export type { IEventHandler } from "@application/events/IEventHandler";
  * This is the main entry point for setting up the infrastructure layer
  */
 export async function createInfrastructure(): Promise<ServiceContainer> {
-  console.log("🏗️ Creating infrastructure...");
+  console.log('🏗️ Creating infrastructure...');
 
   const container = ServiceContainer.getInstance();
   await container.initialize();
 
-  console.log("✅ Infrastructure created successfully");
+  console.log('✅ Infrastructure created successfully');
   return container;
 }
 
@@ -114,20 +112,21 @@ export async function createInfrastructure(): Promise<ServiceContainer> {
 export async function createInfrastructureWithConfig(
   configOverrides: Partial<AppConfig>
 ): Promise<ServiceContainer> {
-  console.log("🏗️ Creating infrastructure with custom config...");
+  console.log('🏗️ Creating infrastructure with custom config...');
 
   // Apply configuration overrides
   const config = ConfigService.getInstance();
   const currentConfig = config.get();
+  // eslint-disable-next-line no-unused-vars
   const mergedConfig = { ...currentConfig, ...configOverrides };
 
   // TODO: Implement config override functionality
-  console.log("📝 Configuration overrides applied");
+  console.log('📝 Configuration overrides applied');
 
   const container = ServiceContainer.getInstance();
   await container.initialize();
 
-  console.log("✅ Infrastructure with custom config created successfully");
+  console.log('✅ Infrastructure with custom config created successfully');
   return container;
 }
 
@@ -150,12 +149,12 @@ export function getInfrastructureMetrics(): Metrics {
  * Cleanup function to properly dispose of infrastructure resources
  */
 export async function disposeInfrastructure(): Promise<void> {
-  console.log("🧹 Disposing infrastructure...");
+  console.log('🧹 Disposing infrastructure...');
 
   const container = ServiceContainer.getInstance();
   await container.dispose();
 
-  console.log("✅ Infrastructure disposed successfully");
+  console.log('✅ Infrastructure disposed successfully');
 }
 
 // ===========================
@@ -205,11 +204,11 @@ export async function getInfrastructureStatus(): Promise<{
 
   try {
     const healthResult = await checkInfrastructureHealth();
-    healthy = healthResult.status === "healthy";
+    healthy = healthResult.status === 'healthy';
     metrics = getInfrastructureMetrics();
     config = getInfrastructureConfig();
   } catch (error) {
-    console.error("Failed to get infrastructure status:", error);
+    console.error('Failed to get infrastructure status:', error);
     metrics = MetricsCollector.getInstance().getMetrics();
     config = ConfigService.getInstance().get();
   }
@@ -247,46 +246,42 @@ export class InfrastructureError extends Error {
     public readonly originalError?: Error
   ) {
     super(message);
-    this.name = "InfrastructureError";
+    this.name = 'InfrastructureError';
   }
 }
 
 export class ConfigurationError extends InfrastructureError {
   constructor(message: string, originalError?: Error) {
-    super(message, "Configuration", originalError);
-    this.name = "ConfigurationError";
+    super(message, 'Configuration', originalError);
+    this.name = 'ConfigurationError';
   }
 }
 
 export class ServiceInitializationError extends InfrastructureError {
   constructor(serviceName: string, originalError?: Error) {
-    super(
-      `Failed to initialize service: ${serviceName}`,
-      serviceName,
-      originalError
-    );
-    this.name = "ServiceInitializationError";
+    super(`Failed to initialize service: ${serviceName}`, serviceName, originalError);
+    this.name = 'ServiceInitializationError';
   }
 }
 
 export class DatabaseConnectionError extends InfrastructureError {
   constructor(message: string, originalError?: Error) {
-    super(message, "Database", originalError);
-    this.name = "DatabaseConnectionError";
+    super(message, 'Database', originalError);
+    this.name = 'DatabaseConnectionError';
   }
 }
 
 export class VectorRepositoryError extends InfrastructureError {
   constructor(message: string, originalError?: Error) {
-    super(message, "VectorRepository", originalError);
-    this.name = "VectorRepositoryError";
+    super(message, 'VectorRepository', originalError);
+    this.name = 'VectorRepositoryError';
   }
 }
 
 export class AIServiceError extends InfrastructureError {
   constructor(message: string, originalError?: Error) {
-    super(message, "AIService", originalError);
-    this.name = "AIServiceError";
+    super(message, 'AIService', originalError);
+    this.name = 'AIServiceError';
   }
 }
 
@@ -295,41 +290,37 @@ export class AIServiceError extends InfrastructureError {
 // ===========================
 
 // Re-export commonly used domain interfaces for convenience
-export type { Customer } from "@domain/entities/customer";
-export type { Product } from "@domain/entities/product";
-export type { ChatSession } from "@domain/entities/chat-session";
-export type { ChatMessage, MessageType } from "@domain/entities/chat-message";
-export type { ProductEmbedding } from "@domain/entities/product-embedding";
-export type { ChatContext } from "@domain/entities/chat-context";
+export type { ChatContext } from '@domain/entities/chat-context';
+export type { ChatMessage, MessageType } from '@domain/entities/chat-message';
+export type { ChatSession } from '@domain/entities/chat-session';
+export type { Customer } from '@domain/entities/customer';
+export type { Product } from '@domain/entities/product';
+export type { ProductEmbedding } from '@domain/entities/product-embedding';
 
 // Re-export commonly used application DTOs
-export type { ChatRequestDto } from "@application/dtos/chat-request-dto";
+export type { ChatRequestDto } from '@application/dtos/chat-request-dto';
 
 export type {
-  CustomerDto,
   CreateCustomerDto,
+  CustomerDto,
   UpdateCustomerDto,
-} from "@application/dtos/customer-dto";
+} from '@application/dtos/customer-dto';
 
 export type {
-  ProductDto,
   CreateProductDto,
-  UpdateProductDto,
+  ProductDto,
   ProductSearchDto,
-} from "@application/dtos/product-dto";
+  UpdateProductDto,
+} from '@application/dtos/product-dto';
 
 // Re-export common shared errors
-export type {
-  CustomError,
-  ValidationError,
-  NotFoundError,
-} from "@shared/errors/custom-error";
+export type { CustomError, NotFoundError, ValidationError } from '@shared/errors/custom-error';
 
 // ===========================
 // VERSION INFO
 // ===========================
 
-export const INFRASTRUCTURE_VERSION = "1.0.0";
+export const INFRASTRUCTURE_VERSION = '1.0.0';
 export const INFRASTRUCTURE_BUILD_DATE = new Date().toISOString();
 
 /**
@@ -361,26 +352,22 @@ export async function seedInfrastructureData(): Promise<void> {
   const config = ConfigService.getInstance();
 
   if (!config.isDevelopment()) {
-    throw new Error(
-      "Data seeding is only available in development environment"
-    );
+    throw new Error('Data seeding is only available in development environment');
   }
 
-  console.log("🌱 Seeding infrastructure with test data...");
+  console.log('🌱 Seeding infrastructure with test data...');
 
   const container = ServiceContainer.getInstance();
 
   // Seed customer repository
-  const customerRepo =
-    container.getCustomerRepository() as InMemoryCustomerRepository;
+  const customerRepo = container.getCustomerRepository() as InMemoryCustomerRepository;
   customerRepo.seed();
 
   // Seed product repository
-  const productRepo =
-    container.getProductRepository() as InMemoryProductRepository;
+  const productRepo = container.getProductRepository() as InMemoryProductRepository;
   productRepo.seed();
 
-  console.log("✅ Infrastructure data seeded successfully");
+  console.log('✅ Infrastructure data seeded successfully');
 }
 
 /**
@@ -391,22 +378,18 @@ export async function clearInfrastructureData(): Promise<void> {
   const config = ConfigService.getInstance();
 
   if (!config.isDevelopment()) {
-    throw new Error(
-      "Data clearing is only available in development environment"
-    );
+    throw new Error('Data clearing is only available in development environment');
   }
 
-  console.log("🧹 Clearing infrastructure data...");
+  console.log('🧹 Clearing infrastructure data...');
 
   const container = ServiceContainer.getInstance();
 
   // Clear repositories
-  const customerRepo =
-    container.getCustomerRepository() as InMemoryCustomerRepository;
+  const customerRepo = container.getCustomerRepository() as InMemoryCustomerRepository;
   customerRepo.clear();
 
-  const productRepo =
-    container.getProductRepository() as InMemoryProductRepository;
+  const productRepo = container.getProductRepository() as InMemoryProductRepository;
   productRepo.clear();
 
   const chatRepo = container.getChatRepository() as InMemoryChatRepository;
@@ -415,7 +398,7 @@ export async function clearInfrastructureData(): Promise<void> {
   // Reset metrics
   MetricsCollector.getInstance().reset();
 
-  console.log("✅ Infrastructure data cleared successfully");
+  console.log('✅ Infrastructure data cleared successfully');
 }
 
 // ===========================

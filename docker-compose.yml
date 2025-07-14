@@ -14,14 +14,14 @@ services:
       MONGO_INITDB_DATABASE: productdb
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init:/docker-entrypoint-initdb.d
     networks:
       - app-network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://admin:password123@localhost:27017/productdb --quiet
-      interval: 30s
-      timeout: 10s
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')", '--quiet']
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 30s
 
   # Weaviate Vector Database
   weaviate:
@@ -60,37 +60,12 @@ services:
           '--spider',
           'http://localhost:8080/v1/.well-known/live',
         ]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 3
+      start_period: 20s
 
-  # Application Service
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: product-app
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      - NODE_ENV=production
-      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/productdb
-      - WEAVIATE_URL=http://weaviate:8080
-      - WEAVIATE_API_KEY=
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - PORT=3000
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      weaviate:
-        condition: service_healthy
-    networks:
-      - app-network
-    volumes:
-      - ./logs:/app/logs
-
-  # MongoDB Admin Interface (optional)
+  # MongoDB Admin Interface
   mongo-express:
     image: mongo-express:1.0.0
     container_name: mongo-express
