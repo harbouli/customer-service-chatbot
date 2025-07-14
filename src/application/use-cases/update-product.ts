@@ -1,10 +1,10 @@
-import { IProductRepository } from "@domain/repositories/IProductRepository";
-import { IVectorRepository } from "@domain/repositories/IVectorRepository";
-import { IGenerativeAIService } from "@domain/services/chatbot-service";
-import { NotFoundError } from "@shared/errors/custom-error";
+import { IProductRepository } from '@domain/repositories/IProductRepository';
+import { IVectorRepository } from '@domain/repositories/IVectorRepository';
+import { IGenerativeAIService } from '@domain/services/chatbot-service';
+import { NotFoundError } from '@shared/errors/custom-error';
 
-import { UpdateProductDto, ProductDto } from "../dtos/product-dto";
-import { ProductMapper } from "../mappers/product-mapper";
+import { ProductDto, UpdateProductDto } from '../dtos/product-dto';
+import { ProductMapper } from '../mappers/product-mapper';
 
 export class UpdateProduct {
   constructor(
@@ -17,7 +17,7 @@ export class UpdateProduct {
     const product = await this.productRepository.findById(productId);
 
     if (!product) {
-      throw new NotFoundError("Product not found");
+      throw new NotFoundError('Product not found');
     }
 
     const updatedProduct = ProductMapper.updateDomain(product, dto);
@@ -25,12 +25,10 @@ export class UpdateProduct {
 
     // Update embeddings if content changed
     try {
-      const embedding = await this.aiService.generateEmbedding(
-        updatedProduct.searchableContent
-      );
+      const embedding = await this.aiService.generateEmbedding(updatedProduct.searchableContent);
       await this.vectorRepository.updateProductEmbedding(productId, embedding);
     } catch (error) {
-      console.error("Failed to update product embedding:", error);
+      console.error('Failed to update product embedding:', error);
     }
 
     return ProductMapper.toDto(updatedProduct);

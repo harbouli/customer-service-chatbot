@@ -19,7 +19,7 @@ module.exports = {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-var-requires': 'error',
     '@typescript-eslint/ban-ts-comment': 'warn',
@@ -32,7 +32,7 @@ module.exports = {
     'import/no-duplicates': 'off',
 
     // General rules
-    'no-console': 'warn',
+    'no-console': 'off',
     'no-debugger': 'error',
     'no-duplicate-imports': 'off',
     'no-unused-expressions': 'error',
@@ -42,12 +42,12 @@ module.exports = {
     'prefer-template': 'error',
 
     // Code style
-    'max-len': ['warn', { code: 120, ignoreUrls: true, ignoreStrings: true }],
-    'max-lines': ['warn', { max: 300, skipBlankLines: true, skipComments: true }],
-    complexity: ['warn', 10],
-    'max-depth': ['warn', 4],
-    'max-nested-callbacks': ['warn', 3],
-    'max-params': ['warn', 5],
+    'max-len': ['off', { code: 120, ignoreUrls: true, ignoreStrings: true }],
+    'max-lines': ['off', { max: 300, skipBlankLines: true, skipComments: true }],
+    complexity: ['off', 10],
+    'max-depth': ['off', 4],
+    'max-nested-callbacks': ['off', 3],
+    'max-params': ['off', 5],
   },
   overrides: [
     {
