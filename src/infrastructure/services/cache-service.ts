@@ -1,4 +1,4 @@
-import { ICacheService } from '@application/interfaces/ICacheService';
+import { ICacheService } from '../../application/interfaces/ICacheService';
 
 export class InMemoryCacheService implements ICacheService {
   private cache: Map<

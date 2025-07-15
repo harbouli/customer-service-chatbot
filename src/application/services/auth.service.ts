@@ -1,11 +1,11 @@
-import { IUser } from '@infrastructure/database/models/user.model';
+import jwt from 'jsonwebtoken';
+import { IUser } from '../../infrastructure/database/models/user.model';
 import {
   CreateUserData,
   MongoDBUserRepository,
   UserNotFoundError,
-} from '@infrastructure/repositories/mongodb-user-repository';
-import { CustomError } from '@shared/errors/custom-error';
-import jwt from 'jsonwebtoken';
+} from '../../infrastructure/repositories/mongodb-user-repository';
+import { CustomError } from '../../shared/errors/custom-error';
 
 export interface LoginCredentials {
   email: string;

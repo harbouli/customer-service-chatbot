@@ -1,6 +1,6 @@
-import { CustomError } from '@shared/errors/custom-error';
 import { NextFunction, Request, Response } from 'express';
 import { body, param, query, ValidationChain, validationResult } from 'express-validator';
+import { CustomError } from '../../shared/errors/custom-error';
 // ===========================
 // CHAT VALIDATION
 // ===========================

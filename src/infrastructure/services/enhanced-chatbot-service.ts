@@ -1,8 +1,8 @@
-import { ChatContext } from '@domain/entities/chat-context';
-import { Product } from '@domain/entities/product';
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
+import { ChatContext } from '../../domain/entities/chat-context';
+import { Product } from '../../domain/entities/product';
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../domain/repositories/IVectorRepository';
+import { IChatbotService, IGenerativeAIService } from '../../domain/services/chatbot-service';
 
 export class EnhancedChatbotService implements IChatbotService {
   constructor(

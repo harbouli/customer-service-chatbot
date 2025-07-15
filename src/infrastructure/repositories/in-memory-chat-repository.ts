@@ -1,6 +1,6 @@
-import { ChatMessage } from "@domain/entities/chat-message";
-import { ChatSession } from "@domain/entities/chat-session";
-import { IChatRepository } from "@domain/repositories/IChatRepository";
+import { ChatMessage } from '../../domain/entities/chat-message';
+import { ChatSession } from '../../domain/entities/chat-session';
+import { IChatRepository } from '../../domain/repositories/IChatRepository';
 
 export class InMemoryChatRepository implements IChatRepository {
   private sessions: Map<string, ChatSession> = new Map();
@@ -10,19 +10,13 @@ export class InMemoryChatRepository implements IChatRepository {
     return this.sessions.get(id) || null;
   }
 
-  async findActiveSessionByCustomerId(
-    customerId: string
-  ): Promise<ChatSession | null> {
+  async findActiveSessionByCustomerId(customerId: string): Promise<ChatSession | null> {
     const activeSessions = Array.from(this.sessions.values()).filter(
-      (session) => session.customerId === customerId && session.isActive
+      session => session.customerId === customerId && session.isActive
     );
 
     // Return the most recent active session
-    return (
-      activeSessions.sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-      )[0] || null
-    );
+    return activeSessions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] || null;
   }
 
   async saveSession(session: ChatSession): Promise<void> {
@@ -41,7 +35,7 @@ export class InMemoryChatRepository implements IChatRepository {
 
   async findSessionsByCustomerId(customerId: string): Promise<ChatSession[]> {
     return Array.from(this.sessions.values())
-      .filter((session) => session.customerId === customerId)
+      .filter(session => session.customerId === customerId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 

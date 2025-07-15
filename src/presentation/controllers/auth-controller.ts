@@ -1,15 +1,15 @@
+import { NextFunction, Request, Response } from 'express';
 import {
   AuthenticationService,
   InvalidCredentialsError,
   InvalidTokenError,
   TokenExpiredError,
-} from '@application/services/auth.service';
+} from '../../application/services/auth.service';
 import {
   MongoDBUserRepository,
   UserAlreadyExistsError,
-} from '@infrastructure/repositories/mongodb-user-repository';
-import { CustomError } from '@shared/errors/custom-error';
-import { NextFunction, Request, Response } from 'express';
+} from '../../infrastructure/repositories/mongodb-user-repository';
+import { CustomError } from '../../shared/errors/custom-error';
 import { AuthenticatedRequest } from '../middleware/authentication';
 
 export class AuthController {

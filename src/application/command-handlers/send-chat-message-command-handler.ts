@@ -1,11 +1,10 @@
-import { ChatResponseDto } from "@application/dtos/chat-response-dto";
+import { ChatResponseDto } from '../../application/dtos/chat-response-dto';
 
-import { ChatRequestDto } from "../dtos/chat-request-dto";
-import { ChatMessageSentEvent } from "../events/chat-message-sent-event";
-import { IEventBus } from "../events/IEventBus";
-import { ProcessChatMessage } from "../use-cases/process-chat-message";
-import { ChatValidator } from "../validators/chat-validator";
-
+import { ChatRequestDto } from '../dtos/chat-request-dto';
+import { ChatMessageSentEvent } from '../events/chat-message-sent-event';
+import { IEventBus } from '../events/IEventBus';
+import { ProcessChatMessage } from '../use-cases/process-chat-message';
+import { ChatValidator } from '../validators/chat-validator';
 
 export interface SendChatMessageCommand {
   request: ChatRequestDto;

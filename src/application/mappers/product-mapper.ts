@@ -1,10 +1,6 @@
-import { Product } from "@domain/entities/product";
+import { Product } from '../../domain/entities/product';
 
-import {
-  ProductDto,
-  CreateProductDto,
-  UpdateProductDto,
-} from "../dtos/product-dto";
+import { CreateProductDto, ProductDto, UpdateProductDto } from '../dtos/product-dto';
 
 export class ProductMapper {
   static toDto(product: Product): ProductDto {

@@ -1,15 +1,15 @@
+import { Request, Response } from 'express';
+import { validationResult } from 'express-validator';
 import {
   CreateProductDto,
   ProductSearchDto,
   UpdateProductDto,
-} from '@application/dtos/product-dto';
-import { CreateProduct } from '@application/use-cases/create-product';
-import { DeleteProduct } from '@application/use-cases/delete-product';
-import { SearchProducts } from '@application/use-cases/search-products';
-import { UpdateProduct } from '@application/use-cases/update-product';
-import { CustomError } from '@shared/errors/custom-error';
-import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
+} from '../../application/dtos/product-dto';
+import { CreateProduct } from '../../application/use-cases/create-product';
+import { DeleteProduct } from '../../application/use-cases/delete-product';
+import { SearchProducts } from '../../application/use-cases/search-products';
+import { UpdateProduct } from '../../application/use-cases/update-product';
+import { CustomError } from '../../shared/errors/custom-error';
 
 export class ProductController {
   constructor(

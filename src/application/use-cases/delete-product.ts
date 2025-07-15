@@ -1,6 +1,6 @@
-import { IProductRepository } from "@domain/repositories/IProductRepository";
-import { IVectorRepository } from "@domain/repositories/IVectorRepository";
-import { NotFoundError } from "@shared/errors/custom-error";
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../domain/repositories/IVectorRepository';
+import { NotFoundError } from '../../shared/errors/custom-error';
 
 export class DeleteProduct {
   constructor(
@@ -12,14 +12,14 @@ export class DeleteProduct {
     const product = await this.productRepository.findById(productId);
 
     if (!product) {
-      throw new NotFoundError("Product not found");
+      throw new NotFoundError('Product not found');
     }
 
     // Delete from vector database
     try {
       await this.vectorRepository.deleteProductEmbedding(productId);
     } catch (error) {
-      console.error("Failed to delete product embedding:", error);
+      console.error('Failed to delete product embedding:', error);
     }
 
     // TODO: Implement delete in IProductRepository

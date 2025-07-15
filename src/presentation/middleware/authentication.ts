@@ -1,13 +1,13 @@
+import { NextFunction, Request, Response } from 'express';
 import {
   AccountDeactivatedError,
   AuthenticationService,
   InvalidTokenError,
   TokenExpiredError,
-} from '@application/services/auth.service';
-import { ConfigService } from '@infrastructure/config/app-config';
-import { MongoDBUserRepository } from '@infrastructure/repositories/mongodb-user-repository';
-import { CustomError } from '@shared/errors/custom-error';
-import { NextFunction, Request, Response } from 'express';
+} from '../../application/services/auth.service';
+import { ConfigService } from '../../infrastructure/config/app-config';
+import { MongoDBUserRepository } from '../../infrastructure/repositories/mongodb-user-repository';
+import { CustomError } from '../../shared/errors/custom-error';
 
 export interface AuthenticatedRequest extends Request {
   user?: {

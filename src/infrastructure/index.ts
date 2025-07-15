@@ -63,26 +63,26 @@ export { ServiceContainer } from './factories/service-container';
 // ===========================
 
 // Repository type exports for easier importing
-export type { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
+export type { ICustomerRepository } from '../domain/repositories/ICustomerRepository';
 
-export type { IProductRepository } from '@domain/repositories/IProductRepository';
+export type { IProductRepository } from '../domain/repositories/IProductRepository';
 
-export type { IChatRepository } from '@domain/repositories/IChatRepository';
+export type { IChatRepository } from '../domain/repositories/IChatRepository';
 
-export type { IVectorRepository } from '@domain/repositories/IVectorRepository';
+export type { IVectorRepository } from '../domain/repositories/IVectorRepository';
 
 // Service type exports
-export type { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
+export type { IChatbotService, IGenerativeAIService } from '../domain/services/chatbot-service';
 
-export type { ICacheService } from '@application/interfaces/ICacheService';
+export type { ICacheService } from '../application/interfaces/ICacheService';
 
-export type { IEmailService } from '@application/interfaces/IEmailService';
+export type { IEmailService } from '../application/interfaces/IEmailService';
 
-export type { INotificationService } from '@application/interfaces/INotificationService';
+export type { INotificationService } from '../application/interfaces/INotificationService';
 
-export type { IEventBus } from '@application/events/IEventBus';
+export type { IEventBus } from '../application/events/IEventBus';
 
-export type { IEventHandler } from '@application/events/IEventHandler';
+export type { IEventHandler } from '../application/events/IEventHandler';
 
 // ===========================
 // INFRASTRUCTURE FACTORY
@@ -277,31 +277,31 @@ export class AIServiceError extends InfrastructureError {
 // ===========================
 
 // Re-export commonly used domain interfaces for convenience
-export type { ChatContext } from '@domain/entities/chat-context';
-export type { ChatMessage, MessageType } from '@domain/entities/chat-message';
-export type { ChatSession } from '@domain/entities/chat-session';
-export type { Customer } from '@domain/entities/customer';
-export type { Product } from '@domain/entities/product';
-export type { ProductEmbedding } from '@domain/entities/product-embedding';
+export type { ChatContext } from '../domain/entities/chat-context';
+export type { ChatMessage, MessageType } from '../domain/entities/chat-message';
+export type { ChatSession } from '../domain/entities/chat-session';
+export type { Customer } from '../domain/entities/customer';
+export type { Product } from '../domain/entities/product';
+export type { ProductEmbedding } from '../domain/entities/product-embedding';
 
 // Re-export commonly used application DTOs
-export type { ChatRequestDto } from '@application/dtos/chat-request-dto';
+export type { ChatRequestDto } from '../application/dtos/chat-request-dto';
 
 export type {
   CreateCustomerDto,
   CustomerDto,
   UpdateCustomerDto,
-} from '@application/dtos/customer-dto';
+} from '../application/dtos/customer-dto';
 
 export type {
   CreateProductDto,
   ProductDto,
   ProductSearchDto,
   UpdateProductDto,
-} from '@application/dtos/product-dto';
+} from '../application/dtos/product-dto';
 
 // Re-export common shared errors
-export type { CustomError, NotFoundError, ValidationError } from '@shared/errors/custom-error';
+export type { CustomError, NotFoundError, ValidationError } from '../shared/errors/custom-error';
 
 // ===========================
 // VERSION INFO

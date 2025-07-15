@@ -1,10 +1,10 @@
-import { Product } from '@domain/entities/product';
-import { ProductEmbedding } from '@domain/entities/product-embedding';
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IGenerativeAIService } from '@domain/services/chatbot-service';
-import { ValidationError } from '@shared/errors/custom-error';
 import { v4 as uuidv4 } from 'uuid';
+import { Product } from '../../../domain/entities/product';
+import { ProductEmbedding } from '../../../domain/entities/product-embedding';
+import { IProductRepository } from '../../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../../domain/repositories/IVectorRepository';
+import { IGenerativeAIService } from '../../../domain/services/chatbot-service';
+import { ValidationError } from '../../../shared/errors/custom-error';
 
 export interface EmbeddingResult {
   success: boolean;

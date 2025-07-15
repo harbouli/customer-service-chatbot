@@ -1,4 +1,4 @@
-import { IProductRepository } from '@domain/repositories/IProductRepository';
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
 
 import { ChatAnalyticsDto, ProductAnalyticsDto } from '../dtos/analytics-dto';
 

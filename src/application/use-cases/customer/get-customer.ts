@@ -1,5 +1,5 @@
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
-import { NotFoundError, ValidationError } from '@shared/errors/custom-error';
+import { ICustomerRepository } from '../../../domain/repositories/ICustomerRepository';
+import { NotFoundError, ValidationError } from '../../../shared/errors/custom-error';
 
 import { CustomerDto } from '../../dtos/customer-dto';
 import { CustomerMapper } from '../../mappers/customer-mapper';

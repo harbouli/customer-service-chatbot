@@ -2,10 +2,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
-  testMatch: [
-    '**/__tests__/**/*.ts',
-    '**/?(*.)+(spec|test).ts'
-  ],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
@@ -15,25 +12,21 @@ module.exports = {
     '!src/index.ts',
     '!src/**/__tests__/**',
     '!src/**/*.test.ts',
-    '!src/**/*.spec.ts'
+    '!src/**/*.spec.ts',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: [
-    'text',
-    'lcov',
-    'html'
-  ],
+  coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapping: {
-    '^@domain/(.*)$': '<rootDir>/src/domain/$1',
-    '^@application/(.*)$': '<rootDir>/src/application/$1',
-    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+    '^../domain/(.*)$': '<rootDir>/src/domain/$1',
+    '^../../application/(.*)$': '<rootDir>/src/application/$1',
+    '^../../infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
     '^@presentation/(.*)$': '<rootDir>/src/presentation/$1',
-    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
-    '^@tests/(.*)$': '<rootDir>/tests/$1'
+    '^../../shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 10000,
   verbose: true,
   clearMocks: true,
-  restoreMocks: true
+  restoreMocks: true,
 };

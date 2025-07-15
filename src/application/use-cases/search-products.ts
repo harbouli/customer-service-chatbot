@@ -1,8 +1,8 @@
-import { IProductRepository } from "@domain/repositories/IProductRepository";
-import { IChatbotService } from "@domain/services/chatbot-service";
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
+import { IChatbotService } from '../../domain/services/chatbot-service';
 
-import { ProductSearchDto, ProductDto } from "../dtos/product-dto";
-import { ProductMapper } from "../mappers/product-mapper";
+import { ProductDto, ProductSearchDto } from '../dtos/product-dto';
+import { ProductMapper } from '../mappers/product-mapper';
 
 export class SearchProducts {
   constructor(
@@ -21,9 +21,7 @@ export class SearchProducts {
       );
     } else if (searchDto.category) {
       // Search by category
-      products = await this.productRepository.findByCategory(
-        searchDto.category
-      );
+      products = await this.productRepository.findByCategory(searchDto.category);
     } else {
       // Get all products
       products = await this.productRepository.findAll();
@@ -33,26 +31,20 @@ export class SearchProducts {
     let filteredProducts = products;
 
     if (searchDto.minPrice !== undefined) {
-      filteredProducts = filteredProducts.filter(
-        (p) => p.price >= searchDto.minPrice!
-      );
+      filteredProducts = filteredProducts.filter(p => p.price >= searchDto.minPrice!);
     }
 
     if (searchDto.maxPrice !== undefined) {
-      filteredProducts = filteredProducts.filter(
-        (p) => p.price <= searchDto.maxPrice!
-      );
+      filteredProducts = filteredProducts.filter(p => p.price <= searchDto.maxPrice!);
     }
 
     if (searchDto.inStock !== undefined) {
-      filteredProducts = filteredProducts.filter(
-        (p) => p.inStock === searchDto.inStock
-      );
+      filteredProducts = filteredProducts.filter(p => p.inStock === searchDto.inStock);
     }
 
     if (searchDto.tags && searchDto.tags.length > 0) {
-      filteredProducts = filteredProducts.filter((p) =>
-        searchDto.tags!.some((tag) => p.tags.includes(tag))
+      filteredProducts = filteredProducts.filter(p =>
+        searchDto.tags!.some(tag => p.tags.includes(tag))
       );
     }
 

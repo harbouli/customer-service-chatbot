@@ -1,9 +1,13 @@
-import { ChatResponseDto } from '@application/index';
-import { GetCustomerSessions, GetSessionHistory, ProcessChatMessage } from '@application/use-cases';
-import { ChatRequestDto, MetricsCollector } from '@infrastructure/index';
-import { CustomError } from '@shared/errors/custom-error';
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
+import { ChatResponseDto } from '../../application/index';
+import {
+  GetCustomerSessions,
+  GetSessionHistory,
+  ProcessChatMessage,
+} from '../../application/use-cases';
+import { ChatRequestDto, MetricsCollector } from '../../infrastructure/';
+import { CustomError } from '../../shared/errors/custom-error';
 
 export class ChatController {
   constructor(

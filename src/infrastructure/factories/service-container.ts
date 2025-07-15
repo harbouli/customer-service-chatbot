@@ -1,43 +1,43 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { IEventBus } from '@application/events/IEventBus';
-import { ICacheService } from '@application/interfaces/ICacheService';
-import { IEmailService } from '@application/interfaces/IEmailService';
-import { INotificationService } from '@application/interfaces/INotificationService';
-import { AuthenticationService } from '@application/services/auth.service'; // NEW
-import { IChatRepository } from '@domain/repositories/IChatRepository';
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
-import { ConfigService } from '@infrastructure/config/app-config';
-import { MongoDB } from '@infrastructure/database/mongodb'; // NEW
-import { InMemoryChatRepository } from '@infrastructure/repositories/in-memory-chat-repository';
-import { MongoDBUserRepository } from '@infrastructure/repositories/mongodb-user-repository'; // NEW
-import { WeaviateVectorRepository } from '@infrastructure/repositories/weaviate-vector-repository';
-import { EnhancedChatbotService } from '@infrastructure/services/enhanced-chatbot-service';
-import { InMemoryEventBus } from '@infrastructure/services/event-bus-service';
-import { GoogleGenerativeAIService } from '@infrastructure/services/google-generative-ai-service';
+import { IEventBus } from '../../application/events/IEventBus';
+import { ICacheService } from '../../application/interfaces/ICacheService';
+import { IEmailService } from '../../application/interfaces/IEmailService';
+import { INotificationService } from '../../application/interfaces/INotificationService';
+import { AuthenticationService } from '../../application/services/auth.service'; // NEW
+import { IChatRepository } from '../../domain/repositories/IChatRepository';
+import { ICustomerRepository } from '../../domain/repositories/ICustomerRepository';
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../domain/repositories/IVectorRepository';
+import { IChatbotService, IGenerativeAIService } from '../../domain/services/chatbot-service';
+import { ConfigService } from '../../infrastructure/config/app-config';
+import { MongoDB } from '../../infrastructure/database/mongodb'; // NEW
+import { InMemoryChatRepository } from '../../infrastructure/repositories/in-memory-chat-repository';
+import { MongoDBUserRepository } from '../../infrastructure/repositories/mongodb-user-repository'; // NEW
+import { WeaviateVectorRepository } from '../../infrastructure/repositories/weaviate-vector-repository';
+import { EnhancedChatbotService } from '../../infrastructure/services/enhanced-chatbot-service';
+import { InMemoryEventBus } from '../../infrastructure/services/event-bus-service';
+import { GoogleGenerativeAIService } from '../../infrastructure/services/google-generative-ai-service';
 import { MongoDBCustomerRepository } from '../repositories/mongodb-customer-repository';
 import { InMemoryCacheService } from '../services/cache-service';
 import { NotificationService } from '../services/notification-service';
 
 // Import Customer Use Cases
-import { GetCustomer, UpdateCustomer } from '@application/use-cases';
-import { CreateCustomer } from '@application/use-cases/customer/create-customer';
+import { GetCustomer, UpdateCustomer } from '../../application/use-cases';
+import { CreateCustomer } from '../../application/use-cases/customer/create-customer';
 import {
   ActivateCustomer,
   DeactivateCustomer,
   GetCustomerStatistics,
-} from '@application/use-cases/customer/customer';
+} from '../../application/use-cases/customer/customer';
 import {
   DeleteCustomer,
   GetCustomerByEmail,
-} from '@application/use-cases/customer/delete-customer';
-import { GetAllCustomers } from '@application/use-cases/customer/get-all-customers';
+} from '../../application/use-cases/customer/delete-customer';
+import { GetAllCustomers } from '../../application/use-cases/customer/get-all-customers';
 
 // Import Customer Controller
-import { CustomerController } from '@presentation/controllers/customer-controller';
+import { CustomerController } from '../../presentation/controllers/customer-controller';
 import { MongoDBProductRepository } from '../repositories/mongodb-product-repository';
 
 export class ServiceContainer {

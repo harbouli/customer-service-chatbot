@@ -1,8 +1,8 @@
-import { IChatRepository } from "@domain/repositories/IChatRepository";
-import { NotFoundError } from "@shared/errors/custom-error";
+import { IChatRepository } from '../../domain/repositories/IChatRepository';
+import { NotFoundError } from '../../shared/errors/custom-error';
 
-import { SessionHistoryDto } from "../dtos/session-dto";
-import { SessionMapper } from "../mappers/session-mapper";
+import { SessionHistoryDto } from '../dtos/session-dto';
+import { SessionMapper } from '../mappers/session-mapper';
 
 export class GetSessionHistory {
   constructor(private chatRepository: IChatRepository) {}
@@ -11,7 +11,7 @@ export class GetSessionHistory {
     const session = await this.chatRepository.findSessionById(sessionId);
 
     if (!session) {
-      throw new NotFoundError("Session not found");
+      throw new NotFoundError('Session not found');
     }
 
     const messages = await this.chatRepository.getSessionMessages(sessionId);

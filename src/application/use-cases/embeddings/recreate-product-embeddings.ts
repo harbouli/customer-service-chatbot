@@ -1,7 +1,7 @@
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IGenerativeAIService } from '@domain/services/chatbot-service';
-import { ValidationError } from '@shared/errors/custom-error';
+import { IProductRepository } from '../../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../../domain/repositories/IVectorRepository';
+import { IGenerativeAIService } from '../../../domain/services/chatbot-service';
+import { ValidationError } from '../../../shared/errors/custom-error';
 import {
   EmbeddingInitializationOptions,
   EmbeddingInitializationResult,

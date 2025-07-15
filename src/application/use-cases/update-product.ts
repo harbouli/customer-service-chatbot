@@ -1,7 +1,7 @@
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IGenerativeAIService } from '@domain/services/chatbot-service';
-import { NotFoundError } from '@shared/errors/custom-error';
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../domain/repositories/IVectorRepository';
+import { IGenerativeAIService } from '../../domain/services/chatbot-service';
+import { NotFoundError } from '../../shared/errors/custom-error';
 
 import { ProductDto, UpdateProductDto } from '../dtos/product-dto';
 import { ProductMapper } from '../mappers/product-mapper';

@@ -1,6 +1,6 @@
-// src/presentation/middleware/cors.ts
-import { ConfigService } from "@infrastructure/config/app-config";
-import cors from "cors";
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import cors from 'cors';
+import { ConfigService } from '../../infrastructure/config/app-config';
 
 export function createCorsMiddleware() {
   const config = ConfigService.getInstance();
@@ -22,31 +22,31 @@ export function createCorsMiddleware() {
       }
 
       // Allow localhost in development
-      if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return callback(null, true);
       }
 
-      callback(new Error("Not allowed by CORS policy"));
+      callback(new Error('Not allowed by CORS policy'));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
     allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "X-Request-ID",
-      "Accept",
-      "Origin",
-      "Cache-Control",
-      "Pragma",
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-Request-ID',
+      'Accept',
+      'Origin',
+      'Cache-Control',
+      'Pragma',
     ],
     exposedHeaders: [
-      "X-Total-Count",
-      "X-Page-Count",
-      "X-Request-ID",
-      "X-Rate-Limit-Remaining",
-      "X-Rate-Limit-Reset",
-      "X-New-Token",
+      'X-Total-Count',
+      'X-Page-Count',
+      'X-Request-ID',
+      'X-Rate-Limit-Remaining',
+      'X-Rate-Limit-Reset',
+      'X-New-Token',
     ],
     maxAge: 86400, // 24 hours
     optionsSuccessStatus: 200, // Support legacy browsers
@@ -56,14 +56,14 @@ export function createCorsMiddleware() {
 // CORS preflight handler for complex requests
 export function handleCorsPreflightAll() {
   return (req: any, res: any, next: any) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, Content-Length, X-Requested-With"
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, Content-Length, X-Requested-With'
     );
 
-    if (req.method === "OPTIONS") {
+    if (req.method === 'OPTIONS') {
       res.sendStatus(200);
     } else {
       next();

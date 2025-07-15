@@ -29,11 +29,11 @@
     "noImplicitOverride": true,
     "baseUrl": "./src",
     "paths": {
-      "@domain/*": ["domain/*"],
-      "@application/*": ["application/*"],
-      "@infrastructure/*": ["infrastructure/*"],
+      "../domain/*": ["domain/*"],
+      "../../application/*": ["application/*"],
+      "../../infrastructure/*": ["infrastructure/*"],
       "@presentation/*": ["presentation/*"],
-      "@shared/*": ["shared/*"],
+      "../../shared/*": ["shared/*"],
       "@tests/*": ["../tests/*"]
     }
   },

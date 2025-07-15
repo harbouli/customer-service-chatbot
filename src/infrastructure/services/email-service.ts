@@ -1,4 +1,4 @@
-import { IEmailService } from '@application/interfaces/IEmailService';
+import { IEmailService } from '../../application/interfaces/IEmailService';
 
 export class EmailService implements IEmailService {
   // eslint-disable-next-line @typescript-eslint/no-empty-function

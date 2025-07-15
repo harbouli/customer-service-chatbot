@@ -1,7 +1,7 @@
-import { Product } from '@domain/entities/product';
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { ValidationError } from '@shared/errors/custom-error';
+import { Product } from '../../../domain/entities/product';
+import { IProductRepository } from '../../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../../domain/repositories/IVectorRepository';
+import { ValidationError } from '../../../shared/errors/custom-error';
 import { CreateProductEmbedding, EmbeddingResult } from './create-product-embedding';
 
 export interface CreateEmbeddingBatchOptions {

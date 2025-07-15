@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Customer } from '@domain/entities/customer';
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
-import { CustomError } from '@shared/errors/custom-error';
+import { Customer } from '../../domain/entities/customer';
+import { ICustomerRepository } from '../../domain/repositories/ICustomerRepository';
+import { CustomError } from '../../shared/errors/custom-error';
 import {
   CustomerAlreadyExistsError,
   CustomerModel,

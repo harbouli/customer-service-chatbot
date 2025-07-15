@@ -1,7 +1,7 @@
-import { ChatMessage } from "@domain/entities/chat-message";
-import { ChatSession } from "@domain/entities/chat-session";
+import { ChatMessage } from '../../domain/entities/chat-message';
+import { ChatSession } from '../../domain/entities/chat-session';
 
-import { SessionDto, MessageDto, SessionHistoryDto } from "../dtos/session-dto";
+import { MessageDto, SessionDto, SessionHistoryDto } from '../dtos/session-dto';
 
 export class SessionMapper {
   static toSessionDto(session: ChatSession): SessionDto {
@@ -24,13 +24,10 @@ export class SessionMapper {
     };
   }
 
-  static toSessionHistoryDto(
-    session: ChatSession,
-    messages: ChatMessage[]
-  ): SessionHistoryDto {
+  static toSessionHistoryDto(session: ChatSession, messages: ChatMessage[]): SessionHistoryDto {
     return {
       session: this.toSessionDto(session),
-      messages: messages.map((msg) => this.toMessageDto(msg)),
+      messages: messages.map(msg => this.toMessageDto(msg)),
     };
   }
 }

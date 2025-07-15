@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { ConfigService } from '@infrastructure/config/app-config';
-import { MetricsCollector } from '@infrastructure/monitoring/metrics-collector';
-import { CustomError } from '@shared/errors/custom-error';
 import { NextFunction, Request, Response } from 'express';
+import { ConfigService } from '../../infrastructure/config/app-config';
+import { MetricsCollector } from '../../infrastructure/monitoring/metrics-collector';
+import { CustomError } from '../../shared/errors/custom-error';
 
 export interface ErrorResponse {
   success: false;

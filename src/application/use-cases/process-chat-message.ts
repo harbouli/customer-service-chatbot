@@ -1,13 +1,13 @@
-import { ChatContext } from '@domain/entities/chat-context';
-import { ChatMessage, MessageType } from '@domain/entities/chat-message';
-import { ChatSession } from '@domain/entities/chat-session';
-import { Customer } from '@domain/entities/customer';
-import { Product } from '@domain/entities/product';
-import { IChatRepository } from '@domain/repositories/IChatRepository';
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
-import { IChatbotService } from '@domain/services/chatbot-service';
-import { NotFoundError, ValidationError } from '@shared/errors/custom-error';
 import { v4 as uuidv4 } from 'uuid';
+import { ChatContext } from '../../domain/entities/chat-context';
+import { ChatMessage, MessageType } from '../../domain/entities/chat-message';
+import { ChatSession } from '../../domain/entities/chat-session';
+import { Customer } from '../../domain/entities/customer';
+import { Product } from '../../domain/entities/product';
+import { IChatRepository } from '../../domain/repositories/IChatRepository';
+import { ICustomerRepository } from '../../domain/repositories/ICustomerRepository';
+import { IChatbotService } from '../../domain/services/chatbot-service';
+import { NotFoundError, ValidationError } from '../../shared/errors/custom-error';
 
 import { ChatRequestDto } from '../dtos/chat-request-dto';
 import { ChatResponseDto } from '../dtos/chat-response-dto';

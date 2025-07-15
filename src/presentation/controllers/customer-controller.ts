@@ -1,4 +1,3 @@
-import { CustomError } from '@shared/errors/custom-error';
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { GetCustomer, UpdateCustomer } from '../../application';
@@ -17,6 +16,7 @@ import {
   GetAllCustomers,
   GetAllCustomersFilters,
 } from '../../application/use-cases/customer/get-all-customers';
+import { CustomError } from '../../shared/errors/custom-error';
 
 export class CustomerController {
   constructor(

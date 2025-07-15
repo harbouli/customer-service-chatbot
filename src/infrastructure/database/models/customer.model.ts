@@ -1,5 +1,5 @@
-import { CustomError } from '@shared/errors/custom-error';
 import mongoose, { Document, Schema } from 'mongoose';
+import { CustomError } from '../../../shared/errors/custom-error';
 
 // MongoDB Schema
 export interface ICustomer extends Document {

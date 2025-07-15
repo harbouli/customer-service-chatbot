@@ -1,5 +1,5 @@
-import { MessageType } from '@domain/entities/chat-message';
 import mongoose, { Document, Schema } from 'mongoose';
+import { MessageType } from '../../../domain/entities/chat-message';
 
 // MongoDB Schemas
 export interface IChatMessage extends Document {

@@ -1,6 +1,6 @@
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
-import { ValidationError } from '@shared/errors/custom-error';
 import { v4 as uuidv4 } from 'uuid';
+import { ICustomerRepository } from '../../../domain/repositories/ICustomerRepository';
+import { ValidationError } from '../../../shared/errors/custom-error';
 import { CreateCustomerDto, CustomerDto } from '../../dtos/customer-dto';
 import { CustomerMapper } from '../../mappers/customer-mapper';
 import { CustomerValidator } from '../../validators/customer-validator';

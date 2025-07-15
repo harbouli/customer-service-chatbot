@@ -1,5 +1,5 @@
-import { ChatRequestDto } from '@application/dtos/chat-request-dto';
-import { ChatResponseDto } from '@application/dtos/chat-response-dto';
+import { ChatRequestDto } from '../../application/dtos/chat-request-dto';
+import { ChatResponseDto } from '../../application/dtos/chat-response-dto';
 
 import { SessionDto, SessionHistoryDto } from '../dtos/session-dto';
 import { GetCustomerSessions } from '../use-cases/customer/get-customer-sessions';

@@ -1,5 +1,5 @@
-import { ConfigService, HealthChecker, MetricsCollector } from '@infrastructure/index';
 import { Router } from 'express';
+import { ConfigService, HealthChecker, MetricsCollector } from '../../infrastructure';
 
 export function createPublicRoutes(): Router {
   const router = Router();

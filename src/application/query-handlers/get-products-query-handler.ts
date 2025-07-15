@@ -1,7 +1,7 @@
-import { IProductRepository } from "@domain/repositories/IProductRepository";
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
 
-import { ProductDto, ProductSearchDto } from "../dtos/product-dto";
-import { ProductMapper } from "../mappers/product-mapper";
+import { ProductDto, ProductSearchDto } from '../dtos/product-dto';
+import { ProductMapper } from '../mappers/product-mapper';
 
 export interface GetProductsQuery {
   search?: ProductSearchDto;
@@ -16,25 +16,23 @@ export class GetProductsQueryHandler {
 
     // Apply filters
     if (query.search?.category) {
-      products = products.filter((p) => p.category === query.search!.category);
+      products = products.filter(p => p.category === query.search!.category);
     }
 
     if (query.search?.minPrice !== undefined) {
-      products = products.filter((p) => p.price >= query.search!.minPrice!);
+      products = products.filter(p => p.price >= query.search!.minPrice!);
     }
 
     if (query.search?.maxPrice !== undefined) {
-      products = products.filter((p) => p.price <= query.search!.maxPrice!);
+      products = products.filter(p => p.price <= query.search!.maxPrice!);
     }
 
     if (query.includeOutOfStock === false) {
-      products = products.filter((p) => p.inStock);
+      products = products.filter(p => p.inStock);
     }
 
     if (query.search?.tags && query.search.tags.length > 0) {
-      products = products.filter((p) =>
-        query.search!.tags!.some((tag) => p.tags.includes(tag))
-      );
+      products = products.filter(p => query.search!.tags!.some(tag => p.tags.includes(tag)));
     }
 
     // Apply pagination

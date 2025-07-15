@@ -1,7 +1,7 @@
-import { GetChatAnalytics } from '@application/use-cases/get-chat-analytics';
-import { HealthChecker } from '@infrastructure/health/health-checker';
-import { MetricsCollector } from '@infrastructure/monitoring/metrics-collector';
 import { Request, Response } from 'express';
+import { GetChatAnalytics } from '../../application/use-cases/get-chat-analytics';
+import { HealthChecker } from '../../infrastructure/health/health-checker';
+import { MetricsCollector } from '../../infrastructure/monitoring/metrics-collector';
 
 export class AnalyticsController {
   constructor(private getChatAnalyticsUseCase: GetChatAnalytics) {}

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { ConfigService } from '@infrastructure/config/app-config';
 import { Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import { ConfigService } from '../../infrastructure/config/app-config';
 
 export function createRateLimitMiddleware() {
   const config = ConfigService.getInstance();

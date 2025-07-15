@@ -1,4 +1,4 @@
-import { INotificationService } from '@application/interfaces/INotificationService';
+import { INotificationService } from '../../application/interfaces/INotificationService';
 
 export class NotificationService implements INotificationService {
   private notifications: Map<

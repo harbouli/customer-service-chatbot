@@ -1,5 +1,5 @@
-import { InitializeProductEmbeddings } from '@application/use-cases';
 import { Request, Response } from 'express';
+import { InitializeProductEmbeddings } from '../../application/use-cases';
 
 export class AdminController {
   constructor(private initializeEmbeddingsUseCase: InitializeProductEmbeddings) {}

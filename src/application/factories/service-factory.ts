@@ -8,12 +8,12 @@ import {
   SearchProducts,
   UpdateCustomer,
   UpdateProduct,
-} from '@application/use-cases';
-import { IChatRepository } from '@domain/repositories/IChatRepository';
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
-import { IProductRepository } from '@domain/repositories/IProductRepository';
-import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-service';
+} from '../../application/use-cases';
+import { IChatRepository } from '../../domain/repositories/IChatRepository';
+import { ICustomerRepository } from '../../domain/repositories/ICustomerRepository';
+import { IProductRepository } from '../../domain/repositories/IProductRepository';
+import { IVectorRepository } from '../../domain/repositories/IVectorRepository';
+import { IChatbotService, IGenerativeAIService } from '../../domain/services/chatbot-service';
 
 // Use cases
 import { AnalyticsService } from '../services/analytics.service';

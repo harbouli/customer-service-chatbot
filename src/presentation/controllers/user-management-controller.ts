@@ -1,9 +1,9 @@
+import { NextFunction, Response } from 'express';
 import {
   MongoDBUserRepository,
   UserNotFoundError,
-} from '@infrastructure/repositories/mongodb-user-repository';
-import { CustomError } from '@shared/errors/custom-error';
-import { NextFunction, Response } from 'express';
+} from '../../infrastructure/repositories/mongodb-user-repository';
+import { CustomError } from '../../shared/errors/custom-error';
 import { AuthenticatedRequest } from '../middleware/authentication';
 
 export class UserManagementController {

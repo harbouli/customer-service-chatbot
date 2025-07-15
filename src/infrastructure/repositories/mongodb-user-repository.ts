@@ -1,4 +1,4 @@
-import { CustomError } from '@shared/errors/custom-error';
+import { CustomError } from '../../shared/errors/custom-error';
 import { IUser, User } from '../database/models/user.model';
 
 export interface CreateUserData {

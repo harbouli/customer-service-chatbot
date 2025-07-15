@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
-import { LoggingService } from '@infrastructure/services/logging-service';
 import { NextFunction, Request, Response } from 'express';
+import { LoggingService } from '../../infrastructure/services/logging-service';
 
 export function requestLoggingMiddleware() {
   const logger = LoggingService.getInstance();

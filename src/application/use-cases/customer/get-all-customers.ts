@@ -1,5 +1,5 @@
-import { Customer } from '@domain/entities/customer';
-import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
+import { Customer } from '../../../domain/entities/customer';
+import { ICustomerRepository } from '../../../domain/repositories/ICustomerRepository';
 
 import { CustomerDto } from '../../dtos/customer-dto';
 import { CustomerMapper } from '../../mappers/customer-mapper';
