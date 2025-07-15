@@ -1,15 +1,25 @@
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { ServiceContainer } from '../../infrastructure';
+import { CustomerController } from '../controllers/customer-controller';
 import { authenticate, requireActiveAccount } from '../middleware/authentication';
 import { handleValidationErrors } from '../middleware/validation';
 
-export function createCustomerRoutes(): Router {
+export function createCustomerRoutes(customerController?: CustomerController): Router {
   const router = Router();
 
-  // Get controller from service container
-  const serviceContainer = ServiceContainer.getInstance();
-  const customerController = serviceContainer.getCustomerController();
+  // Get controller from service container or use provided one
+  let controller: CustomerController;
+
+  if (customerController) {
+    controller = customerController;
+  } else {
+    const serviceContainer = ServiceContainer.getInstance();
+    if (!serviceContainer.isServiceInitialized()) {
+      throw new Error('ServiceContainer must be initialized before creating customer routes');
+    }
+    controller = serviceContainer.getCustomerController();
+  }
 
   // ============================================================================
   // PUBLIC CUSTOMER ROUTES (no authentication required)
@@ -35,7 +45,7 @@ export function createCustomerRoutes(): Router {
       body('phone').optional().isMobilePhone('any').withMessage('Valid phone number is required'),
     ],
     handleValidationErrors,
-    customerController.createCustomer.bind(customerController)
+    controller.createCustomer.bind(controller)
   );
 
   /**
@@ -43,7 +53,7 @@ export function createCustomerRoutes(): Router {
    * @desc Customer service health check (public)
    * @access Public
    */
-  router.get('/health', customerController.healthCheck.bind(customerController));
+  router.get('/health', controller.healthCheck.bind(controller));
 
   /**
    * @route GET /api/customers/email/:email
@@ -55,7 +65,7 @@ export function createCustomerRoutes(): Router {
     '/email/:email',
     [param('email').isEmail().withMessage('Valid email address is required')],
     handleValidationErrors,
-    customerController.getCustomerByEmail.bind(customerController)
+    controller.getCustomerByEmail.bind(controller)
   );
 
   // ============================================================================
@@ -90,33 +100,7 @@ export function createCustomerRoutes(): Router {
       query('isActive').optional().isBoolean().withMessage('isActive must be a boolean value'),
     ],
     handleValidationErrors,
-    customerController.getAllCustomers.bind(customerController)
-  );
-
-  /**
-   * @route GET /api/customers/search
-   * @desc Search customers by name, email, or phone
-   * @access Private (authenticated users)
-   * @query {string} q - Search query (minimum 2 characters)
-   * @query {number} [limit=50] - Maximum number of results (max 100)
-   */
-  router.get(
-    '/search',
-    authenticate,
-    requireActiveAccount,
-    [
-      query('q')
-        .isString()
-        .trim()
-        .isLength({ min: 2, max: 100 })
-        .withMessage('Search query must be between 2 and 100 characters'),
-      query('limit')
-        .optional()
-        .isInt({ min: 1, max: 100 })
-        .withMessage('Limit must be between 1 and 100'),
-    ],
-    handleValidationErrors,
-    customerController.searchCustomers.bind(customerController)
+    controller.getAllCustomers.bind(controller)
   );
 
   /**
@@ -128,7 +112,7 @@ export function createCustomerRoutes(): Router {
     '/statistics',
     authenticate,
     requireActiveAccount,
-    customerController.getStatistics.bind(customerController)
+    controller.getStatistics.bind(controller)
   );
 
   /**
@@ -143,7 +127,7 @@ export function createCustomerRoutes(): Router {
     requireActiveAccount,
     [param('customerId').isUUID().withMessage('Customer ID must be a valid UUID')],
     handleValidationErrors,
-    customerController.getCustomer.bind(customerController)
+    controller.getCustomer.bind(controller)
   );
 
   /**
@@ -175,45 +159,7 @@ export function createCustomerRoutes(): Router {
       body('phone').optional().isMobilePhone('any').withMessage('Valid phone number is required'),
     ],
     handleValidationErrors,
-    customerController.updateCustomer.bind(customerController)
-  );
-
-  /**
-   * @route PUT /api/customers/:customerId/email
-   * @desc Update customer email address
-   * @access Private (authenticated users)
-   * @param {string} customerId - Customer UUID
-   * @body {string} email - New email address
-   */
-  router.put(
-    '/:customerId/email',
-    authenticate,
-    requireActiveAccount,
-    [
-      param('customerId').isUUID().withMessage('Customer ID must be a valid UUID'),
-      body('email').isEmail().normalizeEmail().withMessage('Valid email address is required'),
-    ],
-    handleValidationErrors,
-    customerController.updateCustomerEmail.bind(customerController)
-  );
-
-  /**
-   * @route PUT /api/customers/:customerId/phone
-   * @desc Update customer phone number
-   * @access Private (authenticated users)
-   * @param {string} customerId - Customer UUID
-   * @body {string} [phone] - New phone number (can be null to remove)
-   */
-  router.put(
-    '/:customerId/phone',
-    authenticate,
-    requireActiveAccount,
-    [
-      param('customerId').isUUID().withMessage('Customer ID must be a valid UUID'),
-      body('phone').optional().isMobilePhone('any').withMessage('Valid phone number is required'),
-    ],
-    handleValidationErrors,
-    customerController.updateCustomerPhone.bind(customerController)
+    controller.updateCustomer.bind(controller)
   );
 
   /**
@@ -228,7 +174,7 @@ export function createCustomerRoutes(): Router {
     requireActiveAccount,
     [param('customerId').isUUID().withMessage('Customer ID must be a valid UUID')],
     handleValidationErrors,
-    customerController.activateCustomer.bind(customerController)
+    controller.activateCustomer.bind(controller)
   );
 
   /**
@@ -243,7 +189,7 @@ export function createCustomerRoutes(): Router {
     requireActiveAccount,
     [param('customerId').isUUID().withMessage('Customer ID must be a valid UUID')],
     handleValidationErrors,
-    customerController.deactivateCustomer.bind(customerController)
+    controller.deactivateCustomer.bind(controller)
   );
 
   /**
@@ -258,7 +204,7 @@ export function createCustomerRoutes(): Router {
     requireActiveAccount,
     [param('customerId').isUUID().withMessage('Customer ID must be a valid UUID')],
     handleValidationErrors,
-    customerController.deleteCustomer.bind(customerController)
+    controller.deleteCustomer.bind(controller)
   );
 
   // ============================================================================
@@ -282,7 +228,7 @@ export function createCustomerRoutes(): Router {
       body('customerIds.*').isUUID().withMessage('Each customer ID must be a valid UUID'),
     ],
     handleValidationErrors,
-    customerController.bulkActivateCustomers.bind(customerController)
+    controller.bulkActivateCustomers.bind(controller)
   );
 
   /**
@@ -302,7 +248,7 @@ export function createCustomerRoutes(): Router {
       body('customerIds.*').isUUID().withMessage('Each customer ID must be a valid UUID'),
     ],
     handleValidationErrors,
-    customerController.bulkDeactivateCustomers.bind(customerController)
+    controller.bulkDeactivateCustomers.bind(controller)
   );
 
   return router;

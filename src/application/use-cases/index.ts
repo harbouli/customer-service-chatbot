@@ -1,5 +1,4 @@
 export * from './bulk-initialize-embeddings';
-export * from './create-customer';
 export * from './create-product';
 export * from './customer/get-customer';
 export * from './customer/get-customer-sessions';

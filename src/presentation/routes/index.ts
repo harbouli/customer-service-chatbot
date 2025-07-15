@@ -21,7 +21,6 @@ export function createMainRouter(): Router {
 
   // NEW: Mount authentication routes (mixed public/private)
   router.use('/auth', createAuthRoutes());
-  router.use('/auth', createCustomerRoutes());
 
   // 404 handler for API routes (EXISTING - ENHANCED)
   router.use('/api/*', (req: Request, res: Response): void => {
