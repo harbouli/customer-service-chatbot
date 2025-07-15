@@ -13,20 +13,53 @@ import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-
 import { ConfigService } from '@infrastructure/config/app-config';
 import { MongoDB } from '@infrastructure/database/mongodb'; // NEW
 import { InMemoryChatRepository } from '@infrastructure/repositories/in-memory-chat-repository';
-import { InMemoryCustomerRepository } from '@infrastructure/repositories/in-memory-customer-repository';
 import { InMemoryProductRepository } from '@infrastructure/repositories/in-memory-product-repository';
 import { MongoDBUserRepository } from '@infrastructure/repositories/mongodb-user-repository'; // NEW
 import { WeaviateVectorRepository } from '@infrastructure/repositories/weaviate-vector-repository';
 import { EnhancedChatbotService } from '@infrastructure/services/enhanced-chatbot-service';
 import { InMemoryEventBus } from '@infrastructure/services/event-bus-service';
 import { GoogleGenerativeAIService } from '@infrastructure/services/google-generative-ai-service';
+import { MongoDBCustomerRepository } from '../repositories/mongodb-customer-repository';
 import { InMemoryCacheService } from '../services/cache-service';
 import { NotificationService } from '../services/notification-service';
+
+// Import Customer Use Cases
+import { GetCustomer, UpdateCustomer } from '@application/use-cases';
+import { CreateCustomer } from '@application/use-cases/customer/create-customer';
+import {
+  ActivateCustomer,
+  DeactivateCustomer,
+  GetCustomerStatistics,
+} from '@application/use-cases/customer/customer';
+import {
+  DeleteCustomer,
+  GetCustomerByEmail,
+} from '@application/use-cases/customer/delete-customer';
+import { GetAllCustomers } from '@application/use-cases/customer/get-all-customers';
+
+// Import Customer Controller
+import { CustomerController } from '@presentation/controllers/customer-controller';
 
 export class ServiceContainer {
   private static instance: ServiceContainer;
   private services: Map<string, any> = new Map();
   private isInitialized = false;
+
+  // Customer-related instances
+  private customerController?: CustomerController | undefined;
+  private customerUseCases?:
+    | {
+        createCustomer: CreateCustomer;
+        getCustomer: GetCustomer;
+        updateCustomer: UpdateCustomer;
+        deleteCustomer: DeleteCustomer;
+        getCustomerByEmail: GetCustomerByEmail;
+        getAllCustomers: GetAllCustomers;
+        activateCustomer: ActivateCustomer;
+        deactivateCustomer: DeactivateCustomer;
+        getCustomerStatistics: GetCustomerStatistics;
+      }
+    | undefined;
 
   private constructor() {}
 
@@ -63,6 +96,9 @@ export class ServiceContainer {
       // Initialize AI services
       await this.initializeAIServices(config);
 
+      // Initialize customer use cases and controller
+      await this.initializeCustomerServices();
+
       this.isInitialized = true;
       console.log('✅ Service container initialized successfully');
     } catch (error) {
@@ -90,7 +126,7 @@ export class ServiceContainer {
     this.register('userRepository', userRepository);
 
     // Customer Repository
-    const customerRepository = new InMemoryCustomerRepository();
+    const customerRepository = new MongoDBCustomerRepository();
     this.register('customerRepository', customerRepository);
 
     // Product Repository
@@ -169,6 +205,50 @@ export class ServiceContainer {
     }
   }
 
+  private async initializeCustomerServices(): Promise<void> {
+    console.log('👥 Initializing customer services...');
+
+    try {
+      // Get customer repository
+      const customerRepository = this.getCustomerRepository();
+
+      // Initialize customer use cases
+      this.customerUseCases = {
+        createCustomer: new CreateCustomer(customerRepository),
+        getCustomer: new GetCustomer(customerRepository),
+        updateCustomer: new UpdateCustomer(customerRepository),
+        deleteCustomer: new DeleteCustomer(customerRepository),
+        getCustomerByEmail: new GetCustomerByEmail(customerRepository),
+        getAllCustomers: new GetAllCustomers(customerRepository),
+        activateCustomer: new ActivateCustomer(customerRepository),
+        deactivateCustomer: new DeactivateCustomer(customerRepository),
+        getCustomerStatistics: new GetCustomerStatistics(customerRepository),
+      };
+
+      // Initialize customer controller
+      this.customerController = new CustomerController(
+        this.customerUseCases.createCustomer,
+        this.customerUseCases.getCustomer,
+        this.customerUseCases.updateCustomer,
+        this.customerUseCases.deleteCustomer,
+        this.customerUseCases.getCustomerByEmail,
+        this.customerUseCases.getAllCustomers,
+        this.customerUseCases.activateCustomer,
+        this.customerUseCases.deactivateCustomer,
+        this.customerUseCases.getCustomerStatistics
+      );
+
+      // Register services
+      this.register('customerUseCases', this.customerUseCases);
+      this.register('customerController', this.customerController);
+
+      console.log('✅ Customer services initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize customer services:', error);
+      throw error;
+    }
+  }
+
   register<T>(name: string, service: T): void {
     this.services.set(name, service);
   }
@@ -240,9 +320,75 @@ export class ServiceContainer {
     return this.get<MongoDB>('mongodb');
   }
 
+  // NEW Customer getters
+  getCustomerController(): CustomerController {
+    if (!this.customerController) {
+      throw new Error('Customer controller not initialized. Call initialize() first.');
+    }
+    return this.customerController;
+  }
+
+  getCustomerUseCases(): {
+    createCustomer: CreateCustomer;
+    getCustomer: GetCustomer;
+    updateCustomer: UpdateCustomer;
+    deleteCustomer: DeleteCustomer;
+    getCustomerByEmail: GetCustomerByEmail;
+    getAllCustomers: GetAllCustomers;
+    activateCustomer: ActivateCustomer;
+    deactivateCustomer: DeactivateCustomer;
+    getCustomerStatistics: GetCustomerStatistics;
+  } {
+    if (!this.customerUseCases) {
+      throw new Error('Customer use cases not initialized. Call initialize() first.');
+    }
+    return this.customerUseCases;
+  }
+
+  // Individual customer use case getters for flexibility
+  getCreateCustomerUseCase(): CreateCustomer {
+    return this.getCustomerUseCases().createCustomer;
+  }
+
+  getGetCustomerUseCase(): GetCustomer {
+    return this.getCustomerUseCases().getCustomer;
+  }
+
+  getUpdateCustomerUseCase(): UpdateCustomer {
+    return this.getCustomerUseCases().updateCustomer;
+  }
+
+  getDeleteCustomerUseCase(): DeleteCustomer {
+    return this.getCustomerUseCases().deleteCustomer;
+  }
+
+  getGetCustomerByEmailUseCase(): GetCustomerByEmail {
+    return this.getCustomerUseCases().getCustomerByEmail;
+  }
+
+  getGetAllCustomersUseCase(): GetAllCustomers {
+    return this.getCustomerUseCases().getAllCustomers;
+  }
+
+  getActivateCustomerUseCase(): ActivateCustomer {
+    return this.getCustomerUseCases().activateCustomer;
+  }
+
+  getDeactivateCustomerUseCase(): DeactivateCustomer {
+    return this.getCustomerUseCases().deactivateCustomer;
+  }
+
+  getGetCustomerStatisticsUseCase(): GetCustomerStatistics {
+    return this.getCustomerUseCases().getCustomerStatistics;
+  }
+
   // EXISTING dispose method (keeping compatibility)
   async dispose(): Promise<void> {
     console.log('🧹 Disposing service container...');
+
+    // Clear customer services
+    this.customerController = undefined;
+    this.customerUseCases = undefined;
 
     // Dispose services that need cleanup
     const cacheService = this.services.get('cacheService') as InMemoryCacheService;
@@ -273,5 +419,24 @@ export class ServiceContainer {
   // NEW method to check initialization status
   isServiceInitialized(): boolean {
     return this.isInitialized;
+  }
+
+  // Utility method to get service health status
+  getServiceHealthStatus(): {
+    initialized: boolean;
+    mongodb: boolean;
+    repositories: boolean;
+    customerServices: boolean;
+    authServices: boolean;
+    aiServices: boolean;
+  } {
+    return {
+      initialized: this.isInitialized,
+      mongodb: this.has('mongodb'),
+      repositories: this.has('customerRepository') && this.has('productRepository'),
+      customerServices: !!this.customerController && !!this.customerUseCases,
+      authServices: this.has('authService') && this.has('userRepository'),
+      aiServices: this.has('aiService') && this.has('chatbotService'),
+    };
   }
 }

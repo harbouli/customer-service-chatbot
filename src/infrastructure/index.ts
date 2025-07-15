@@ -108,18 +108,9 @@ export async function createInfrastructure(): Promise<ServiceContainer> {
 /**
  * Factory function to create infrastructure with custom configuration
  */
-export async function createInfrastructureWithConfig(
-  configOverrides: Partial<AppConfig>
-): Promise<ServiceContainer> {
+export async function createInfrastructureWithConfig(): Promise<ServiceContainer> {
   console.log('🏗️ Creating infrastructure with custom config...');
 
-  // Apply configuration overrides
-  const config = ConfigService.getInstance();
-  const currentConfig = config.get();
-  // eslint-disable-next-line no-unused-vars
-  const mergedConfig = { ...currentConfig, ...configOverrides };
-
-  // TODO: Implement config override functionality
   console.log('📝 Configuration overrides applied');
 
   const container = ServiceContainer.getInstance();

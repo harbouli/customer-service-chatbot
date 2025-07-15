@@ -5,10 +5,8 @@ import { ProductModel } from '../database/models/product.modal';
 
 // Repository Implementation
 export class MongoDBProductRepository implements IProductRepository {
-  constructor() {
-    // Initialize with sample data if collection is empty
-    this.initializeSampleData();
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  constructor() {}
 
   async findById(productId: string): Promise<Product | null> {
     try {
@@ -260,119 +258,5 @@ export class MongoDBProductRepository implements IProductRepository {
       doc.imageUrl,
       doc.specifications || {}
     );
-  }
-
-  private async initializeSampleData(): Promise<void> {
-    try {
-      const count = await ProductModel.countDocuments();
-      if (count > 0) {
-        console.log('📦 Products already exist in database');
-        return;
-      }
-
-      console.log('🌱 Initializing sample product data...');
-
-      const sampleProducts = [
-        {
-          productId: 'laptop-001',
-          name: 'UltraBook Pro 15',
-          description:
-            'High-performance laptop with 16GB RAM, 512GB SSD, and Intel Core i7 processor. Perfect for professional work and gaming.',
-          price: 1299.99,
-          category: 'Electronics',
-          inStock: true,
-          tags: ['laptop', 'computer', 'gaming', 'professional'],
-          imageUrl: 'https://example.com/images/laptop-001.jpg',
-          specifications: {
-            processor: 'Intel Core i7-12700H',
-            ram: '16GB DDR4',
-            storage: '512GB NVMe SSD',
-            display: '15.6" 4K OLED',
-            graphics: 'NVIDIA RTX 3060',
-            weight: '2.1kg',
-          },
-        },
-        {
-          productId: 'smartphone-001',
-          name: 'Galaxy S23 Ultra',
-          description:
-            'Latest flagship smartphone with advanced camera system, 5G connectivity, and all-day battery life.',
-          price: 899.99,
-          category: 'Electronics',
-          inStock: true,
-          tags: ['smartphone', 'mobile', '5g', 'camera'],
-          imageUrl: 'https://example.com/images/smartphone-001.jpg',
-          specifications: {
-            display: '6.8" Dynamic AMOLED 2X',
-            processor: 'Snapdragon 8 Gen 2',
-            ram: '12GB',
-            storage: '256GB',
-            camera: '200MP + 12MP + 10MP + 10MP',
-            battery: '5000mAh',
-          },
-        },
-        {
-          productId: 'headphones-001',
-          name: 'Wireless Pro Headphones',
-          description:
-            'Premium noise-cancelling wireless headphones with 30-hour battery life and superior sound quality.',
-          price: 299.99,
-          category: 'Audio',
-          inStock: true,
-          tags: ['headphones', 'wireless', 'noise-cancelling', 'audio'],
-          imageUrl: 'https://example.com/images/headphones-001.jpg',
-          specifications: {
-            driver: '40mm dynamic',
-            frequency: '20Hz - 20kHz',
-            battery: '30 hours',
-            connectivity: 'Bluetooth 5.2',
-            weight: '250g',
-          },
-        },
-        {
-          productId: 'chair-001',
-          name: 'Ergonomic Office Chair',
-          description:
-            'Comfortable ergonomic office chair with lumbar support, adjustable height, and breathable mesh back.',
-          price: 399.99,
-          category: 'Furniture',
-          inStock: false,
-          tags: ['chair', 'office', 'ergonomic', 'furniture'],
-          imageUrl: 'https://example.com/images/chair-001.jpg',
-          specifications: {
-            material: 'Mesh and fabric',
-            weight_capacity: '150kg',
-            adjustable_height: '45-55cm',
-            armrests: 'Adjustable',
-            warranty: '5 years',
-          },
-        },
-        {
-          productId: 'tablet-001',
-          name: 'iPad Pro 12.9"',
-          description:
-            'Professional tablet with M2 chip, Liquid Retina XDR display, and support for Apple Pencil.',
-          price: 1099.99,
-          category: 'Electronics',
-          inStock: true,
-          tags: ['tablet', 'ipad', 'professional', 'creative'],
-          imageUrl: 'https://example.com/images/tablet-001.jpg',
-          specifications: {
-            chip: 'Apple M2',
-            display: '12.9" Liquid Retina XDR',
-            storage: '128GB',
-            connectivity: 'Wi-Fi 6E + 5G',
-            camera: '12MP + 10MP',
-            battery: '10,758mAh',
-            pencil: 'Apple Pencil 2nd generation',
-          },
-        },
-      ];
-
-      await ProductModel.insertMany(sampleProducts);
-      console.log(`✅ Initialized ${sampleProducts.length} sample products`);
-    } catch (error) {
-      console.error('❌ Failed to initialize sample data:', error);
-    }
   }
 }

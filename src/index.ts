@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-console */
 import cors from 'cors';
 import dotenv from 'dotenv';
 import type { Express } from 'express';
@@ -7,21 +5,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-// Import infrastructure and use cases
-import { CreateCustomer } from './application/use-cases/customer/create-customer';
-import {
-  ActivateCustomer,
-  DeactivateCustomer,
-  GetCustomerStatistics,
-} from './application/use-cases/customer/customer';
-import {
-  DeleteCustomer,
-  GetCustomerByEmail,
-} from './application/use-cases/customer/delete-customer';
-import { GetAllCustomers } from './application/use-cases/customer/get-all-customers';
-import { GetCustomer } from './application/use-cases/customer/get-customer';
 import { GetCustomerSessions } from './application/use-cases/customer/get-customer-sessions';
-import { UpdateCustomer } from './application/use-cases/customer/update-customer';
 import { InitializeProductEmbeddings } from './application/use-cases/embeddings/initialize-product-embeddings';
 import { GetSessionHistory } from './application/use-cases/get-session-history';
 import { ProcessChatMessage } from './application/use-cases/process-chat-message';
@@ -38,7 +22,6 @@ import { GoogleGenerativeAIService } from './infrastructure/services/google-gene
 
 // Import presentation layer
 import { ChatController } from './presentation/controllers/chat-controller';
-import { CustomerController } from './presentation/controllers/customer-controller';
 import { errorHandler } from './presentation/middleware/error-handler';
 import { createChatRoutes } from './presentation/routes/chat-routes';
 import { createCustomerRoutes } from './presentation/routes/customer-routes';
@@ -120,19 +103,8 @@ async function initializeServer() {
       chatbotService
     );
 
-    const createCustomer = new CreateCustomer(customerRepository);
-    const getCustomer = new GetCustomer(customerRepository);
-    const updateCustomer = new UpdateCustomer(customerRepository);
     const getSessionHistory = new GetSessionHistory(chatRepository);
     const getCustomerSessions = new GetCustomerSessions(chatRepository);
-
-    // Create missing use cases for CustomerController
-    const deleteCustomer = new DeleteCustomer(customerRepository);
-    const getCustomerByEmail = new GetCustomerByEmail(customerRepository);
-    const getAllCustomers = new GetAllCustomers(customerRepository);
-    const activateCustomer = new ActivateCustomer(customerRepository);
-    const deactivateCustomer = new DeactivateCustomer(customerRepository);
-    const getCustomerStatistics = new GetCustomerStatistics(customerRepository);
 
     // Initialize product embeddings if AI service is available
     let initializeEmbeddings: InitializeProductEmbeddings | null = null;
@@ -151,25 +123,13 @@ async function initializeServer() {
       getCustomerSessions
     );
 
-    const customerController = new CustomerController(
-      createCustomer,
-      getCustomer,
-      updateCustomer,
-      deleteCustomer,
-      getCustomerByEmail,
-      getAllCustomers,
-      activateCustomer,
-      deactivateCustomer,
-      getCustomerStatistics
-    );
-
     // Setup routes
     const mainRouter = createMainRouter();
     app.use('/api', mainRouter);
 
     // Mount routes
     app.use('/api/chat', createChatRoutes(chatController));
-    app.use('/api/customers', createCustomerRoutes(customerController));
+    app.use('/api/customers', createCustomerRoutes());
     app.use('/', createDocsRoutes());
 
     console.log('✅ Routes configured');

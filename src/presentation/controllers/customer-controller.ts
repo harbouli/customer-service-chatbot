@@ -193,6 +193,49 @@ export class CustomerController {
   }
 
   // ============================================================================
+  // SEARCH CUSTOMERS
+  // GET /api/customers/search?q=john&limit=50
+  // ============================================================================
+  async searchCustomers(req: Request, res: Response): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: errors.array(),
+        });
+        return;
+      }
+
+      const { q, limit = 50 } = req.query;
+
+      const filters: GetAllCustomersFilters = {
+        limit: Number(limit),
+        offset: 0,
+        search: q as string,
+      };
+
+      console.log(`🔍 Searching customers with query: ${q}`);
+
+      const result = await this.getAllCustomersUseCase.execute(filters);
+
+      res.status(200).json({
+        success: true,
+        data: result.customers,
+        meta: {
+          query: q,
+          totalResults: result.total,
+          limit: Number(limit),
+        },
+      });
+    } catch (error) {
+      console.error('❌ Search customers error:', error);
+      this.handleError(error, res, 'Failed to search customers');
+    }
+  }
+
+  // ============================================================================
   // UPDATE CUSTOMER
   // PUT /api/customers/:customerId
   // ============================================================================
@@ -229,6 +272,82 @@ export class CustomerController {
     } catch (error) {
       console.error('❌ Update customer error:', error);
       this.handleError(error, res, 'Failed to update customer');
+    }
+  }
+
+  // ============================================================================
+  // UPDATE CUSTOMER EMAIL
+  // PUT /api/customers/:customerId/email
+  // ============================================================================
+  async updateCustomerEmail(req: Request, res: Response): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: errors.array(),
+        });
+        return;
+      }
+
+      const { customerId } = req.params;
+      const { email } = req.body;
+
+      console.log(`📧 Updating customer email: ${customerId}`);
+
+      const customer = await this.updateCustomerUseCase.execute(customerId ?? '', {
+        email,
+      });
+
+      console.log(`✅ Customer email updated successfully: ${customerId}`);
+
+      res.status(200).json({
+        success: true,
+        data: customer,
+        message: 'Customer email updated successfully',
+      });
+    } catch (error) {
+      console.error('❌ Update customer email error:', error);
+      this.handleError(error, res, 'Failed to update customer email');
+    }
+  }
+
+  // ============================================================================
+  // UPDATE CUSTOMER PHONE
+  // PUT /api/customers/:customerId/phone
+  // ============================================================================
+  async updateCustomerPhone(req: Request, res: Response): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: errors.array(),
+        });
+        return;
+      }
+
+      const { customerId } = req.params;
+      const { phone } = req.body;
+
+      console.log(`📞 Updating customer phone: ${customerId}`);
+
+      const customer = await this.updateCustomerUseCase.execute(customerId ?? '', {
+        phone,
+      });
+
+      console.log(`✅ Customer phone updated successfully: ${customerId}`);
+
+      res.status(200).json({
+        success: true,
+        data: customer,
+        message: 'Customer phone updated successfully',
+      });
+    } catch (error) {
+      console.error('❌ Update customer phone error:', error);
+      this.handleError(error, res, 'Failed to update customer phone');
     }
   }
 
