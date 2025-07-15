@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
-// src/infrastructure/factories/service-container.ts - Updated with MongoDB Auth
 import { IEventBus } from '@application/events/IEventBus';
 import { ICacheService } from '@application/interfaces/ICacheService';
 import { IEmailService } from '@application/interfaces/IEmailService';

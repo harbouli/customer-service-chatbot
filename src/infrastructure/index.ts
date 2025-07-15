@@ -7,7 +7,6 @@ import { ServiceContainer } from './factories/service-container';
 import { HealthChecker, HealthCheckResult } from './health/health-checker';
 import { Metrics, MetricsCollector } from './monitoring/metrics-collector';
 import { InMemoryChatRepository } from './repositories/in-memory-chat-repository';
-import { InMemoryCustomerRepository } from './repositories/in-memory-customer-repository';
 import { InMemoryProductRepository } from './repositories/in-memory-product-repository';
 
 // ===========================
@@ -359,10 +358,6 @@ export async function seedInfrastructureData(): Promise<void> {
 
   const container = ServiceContainer.getInstance();
 
-  // Seed customer repository
-  const customerRepo = container.getCustomerRepository() as InMemoryCustomerRepository;
-  customerRepo.seed();
-
   // Seed product repository
   const productRepo = container.getProductRepository() as InMemoryProductRepository;
   productRepo.seed();
@@ -384,10 +379,6 @@ export async function clearInfrastructureData(): Promise<void> {
   console.log('🧹 Clearing infrastructure data...');
 
   const container = ServiceContainer.getInstance();
-
-  // Clear repositories
-  const customerRepo = container.getCustomerRepository() as InMemoryCustomerRepository;
-  customerRepo.clear();
 
   const productRepo = container.getProductRepository() as InMemoryProductRepository;
   productRepo.clear();

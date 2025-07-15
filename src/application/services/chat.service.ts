@@ -1,8 +1,8 @@
 import { ChatRequestDto } from '@application/dtos/chat-request-dto';
 import { ChatResponseDto } from '@application/dtos/chat-response-dto';
 
-import { SessionHistoryDto, SessionDto } from '../dtos/session-dto';
-import { GetCustomerSessions } from '../use-cases/get-customer-sessions';
+import { SessionDto, SessionHistoryDto } from '../dtos/session-dto';
+import { GetCustomerSessions } from '../use-cases/customer/get-customer-sessions';
 import { GetSessionHistory } from '../use-cases/get-session-history';
 import { ProcessChatMessage } from '../use-cases/process-chat-message';
 

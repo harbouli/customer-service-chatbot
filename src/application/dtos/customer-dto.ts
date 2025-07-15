@@ -12,7 +12,7 @@ export interface CreateCustomerDto {
 }
 
 export interface UpdateCustomerDto {
-  name?: string;
-  email?: string;
-  phone?: string;
+  name?: string | undefined;
+  email?: string | undefined;
+  phone?: string | undefined;
 }

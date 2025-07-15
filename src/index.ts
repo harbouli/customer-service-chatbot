@@ -8,18 +8,31 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
 // Import infrastructure and use cases
-import { CreateCustomer } from './application/use-cases/create-customer';
-import { GetCustomer } from './application/use-cases/get-customer';
-import { GetCustomerSessions } from './application/use-cases/get-customer-sessions';
+import { CreateCustomer } from './application/use-cases/customer/create-customer';
+import {
+  ActivateCustomer,
+  DeactivateCustomer,
+  GetCustomerStatistics,
+} from './application/use-cases/customer/customer';
+import {
+  DeleteCustomer,
+  GetCustomerByEmail,
+} from './application/use-cases/customer/delete-customer';
+import { GetAllCustomers } from './application/use-cases/customer/get-all-customers';
+import { GetCustomer } from './application/use-cases/customer/get-customer';
+import { GetCustomerSessions } from './application/use-cases/customer/get-customer-sessions';
+import { UpdateCustomer } from './application/use-cases/customer/update-customer';
+import { InitializeProductEmbeddings } from './application/use-cases/embeddings/initialize-product-embeddings';
 import { GetSessionHistory } from './application/use-cases/get-session-history';
-import { InitializeProductEmbeddings } from './application/use-cases/initialize-product-embeddings';
 import { ProcessChatMessage } from './application/use-cases/process-chat-message';
-import { UpdateCustomer } from './application/use-cases/update-customer';
 import { metricsMiddleware } from './infrastructure/middleware/metrics-middleware';
-import { InMemoryChatRepository } from './infrastructure/repositories/in-memory-chat-repository';
-import { InMemoryCustomerRepository } from './infrastructure/repositories/in-memory-customer-repository';
-import { InMemoryProductRepository } from './infrastructure/repositories/in-memory-product-repository';
+
+// MongoDB Repositories
+import { MongoDBChatRepository } from './infrastructure/repositories/mongodb-chat-repository';
+
+// Fallback to in-memory repositories for vector store
 import { WeaviateVectorRepository } from './infrastructure/repositories/weaviate-vector-repository';
+
 import { EnhancedChatbotService } from './infrastructure/services/enhanced-chatbot-service';
 import { GoogleGenerativeAIService } from './infrastructure/services/google-generative-ai-service';
 
@@ -31,28 +44,29 @@ import { createChatRoutes } from './presentation/routes/chat-routes';
 import { createCustomerRoutes } from './presentation/routes/customer-routes';
 
 import { connectDB, disconnectDB, isDBConnected } from './infrastructure/database';
+import { MongoDBCustomerRepository } from './infrastructure/repositories/mongodb-customer-repository';
+import { MongoDBProductRepository } from './infrastructure/repositories/mongodb-product-repository';
 import { createDocsRoutes, createMainRouter } from './presentation/routes';
 import { setupRouteLogging } from './utils/setup-route-logging';
+
 const app: Express = express();
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Rate limiting with new version
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
 
@@ -61,12 +75,14 @@ app.use(metricsMiddleware());
 
 async function initializeServer() {
   try {
-    console.log('🏗️ Initializing server...');
+    console.log('🏗️ Initializing server with MongoDB repositories...');
 
-    // Dependency injection setup
-    const customerRepository = new InMemoryCustomerRepository();
-    const productRepository = new InMemoryProductRepository();
-    const chatRepository = new InMemoryChatRepository();
+    // MongoDB-based dependency injection setup
+    const customerRepository = new MongoDBCustomerRepository();
+    const productRepository = new MongoDBProductRepository();
+    const chatRepository = new MongoDBChatRepository();
+
+    console.log('✅ MongoDB repositories initialized');
 
     // Initialize AI and Vector services
     const googleApiKey = process.env.GOOGLE_AI_API_KEY;
@@ -95,7 +111,9 @@ async function initializeServer() {
       );
     }
 
-    // Initialize use cases
+    console.log('✅ AI and Vector services initialized');
+
+    // Initialize use cases with MongoDB repositories
     const processChatMessage = new ProcessChatMessage(
       chatRepository,
       customerRepository,
@@ -107,6 +125,14 @@ async function initializeServer() {
     const updateCustomer = new UpdateCustomer(customerRepository);
     const getSessionHistory = new GetSessionHistory(chatRepository);
     const getCustomerSessions = new GetCustomerSessions(chatRepository);
+
+    // Create missing use cases for CustomerController
+    const deleteCustomer = new DeleteCustomer(customerRepository);
+    const getCustomerByEmail = new GetCustomerByEmail(customerRepository);
+    const getAllCustomers = new GetAllCustomers(customerRepository);
+    const activateCustomer = new ActivateCustomer(customerRepository);
+    const deactivateCustomer = new DeactivateCustomer(customerRepository);
+    const getCustomerStatistics = new GetCustomerStatistics(customerRepository);
 
     // Initialize product embeddings if AI service is available
     let initializeEmbeddings: InitializeProductEmbeddings | null = null;
@@ -125,16 +151,34 @@ async function initializeServer() {
       getCustomerSessions
     );
 
-    const customerController = new CustomerController(createCustomer, getCustomer, updateCustomer);
+    const customerController = new CustomerController(
+      createCustomer,
+      getCustomer,
+      updateCustomer,
+      deleteCustomer,
+      getCustomerByEmail,
+      getAllCustomers,
+      activateCustomer,
+      deactivateCustomer,
+      getCustomerStatistics
+    );
+
+    // Setup routes
     const mainRouter = createMainRouter();
     app.use('/api', mainRouter);
+
     // Mount routes
     app.use('/api/chat', createChatRoutes(chatController));
     app.use('/api/customers', createCustomerRoutes(customerController));
     app.use('/', createDocsRoutes());
 
+    console.log('✅ Routes configured');
+
     // Health check
     app.get('/health', async (_, res) => {
+      const chatStats = await chatRepository.getChatStatistics().catch(() => null);
+      const productStats = await productRepository.getProductStatistics().catch(() => null);
+
       res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
@@ -143,14 +187,19 @@ async function initializeServer() {
           database: isDBConnected() ? 'connected' : 'disconnected',
           vector: true,
         },
+        statistics: {
+          chat: chatStats,
+          products: productStats,
+        },
       });
     });
 
     // API Info endpoint
     app.get('/api', (_, res) => {
       res.json({
-        name: 'Customer Support Chatbot API',
-        version: '1.0.0',
+        name: 'Customer Support Chatbot API (MongoDB)',
+        version: '2.0.0',
+        database: 'MongoDB',
         endpoints: {
           // EXISTING endpoints
           chat: '/api/chat/message',
@@ -175,10 +224,13 @@ async function initializeServer() {
           vectorSearch: true,
           contextualResponses: true,
           customerManagement: true,
-          userAuthentication: true, // NEW
-          roleBasedAccess: true, // NEW
-          refreshTokens: true, // NEW
-          passwordReset: true, // NEW
+          persistentStorage: true, // NEW - MongoDB storage
+          chatHistory: true, // NEW - Persistent chat history
+          productCatalog: true, // NEW - Persistent product catalog
+          userAuthentication: true,
+          roleBasedAccess: true,
+          refreshTokens: true,
+          passwordReset: true,
         },
         authentication: {
           type: 'JWT Bearer Token',
@@ -193,8 +245,14 @@ async function initializeServer() {
                 }
               : undefined,
         },
+        storage: {
+          database: 'MongoDB',
+          collections: ['customers', 'products', 'chatsessions', 'chatmessages', 'users'],
+          features: ['indexing', 'aggregation', 'text_search', 'persistence'],
+        },
       });
     });
+
     setupRouteLogging(app);
 
     // Error handling
@@ -232,7 +290,7 @@ async function initializeServer() {
       console.log('⚠️  AI service not available - skipping embedding initialization');
     }
 
-    console.log('✅ Server initialization completed');
+    console.log('✅ Server initialization completed with MongoDB storage');
   } catch (error) {
     console.error('❌ Server initialization failed:', error);
     throw error;
@@ -242,11 +300,20 @@ async function initializeServer() {
 // Start server
 async function startServer() {
   try {
-    await initializeServer();
+    // Connect to MongoDB first
+    console.log('🔌 Connecting to MongoDB...');
     await connectDB();
+    console.log('✅ MongoDB connected successfully');
+
+    // Then initialize the server
+    await initializeServer();
 
     const server = app.listen(PORT, () => {
       console.log(`🚀 Customer Support Chatbot server running on port ${PORT}`);
+      console.log(`📊 Using MongoDB for persistent storage`);
+      console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+      console.log(`📖 API docs: http://localhost:${PORT}/docs`);
+      console.log(`💾 Database: ${isDBConnected() ? 'Connected' : 'Disconnected'}`);
     });
 
     // Graceful shutdown handling
@@ -254,7 +321,9 @@ async function startServer() {
       console.log(`\n📋 Received ${signal}, starting graceful shutdown...`);
 
       server.close(async () => {
+        console.log('🔌 Closing database connections...');
         await disconnectDB();
+        console.log('✅ Graceful shutdown completed');
         process.exit(0);
       });
 
@@ -269,6 +338,7 @@ async function startServer() {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   } catch (error) {
     console.error('❌ Failed to start server:', error);
+    await disconnectDB();
     process.exit(1);
   }
 }

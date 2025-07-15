@@ -1,6 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable max-lines */
-/* eslint-disable max-len */
 import { ChatContext } from '@domain/entities/chat-context';
 import { ChatMessage, MessageType } from '@domain/entities/chat-message';
 import { ChatSession } from '@domain/entities/chat-session';
@@ -48,7 +45,6 @@ export class ProcessChatMessage {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private isDependenciesObject(obj: any): obj is ProcessChatMessageDependencies {
     return obj && typeof obj === 'object' && 'chatRepository' in obj;
   }

@@ -1,24 +1,19 @@
-import { Customer } from "@domain/entities/customer";
-import { ICustomerRepository } from "@domain/repositories/ICustomerRepository";
+import { Customer } from '@domain/entities/customer';
+import { ICustomerRepository } from '@domain/repositories/ICustomerRepository';
 
 export class InMemoryCustomerRepository implements ICustomerRepository {
-  private customers: Customer[] = [
-    new Customer("1", "John Doe", "john@example.com", "+1234567890"),
-    new Customer("2", "Jane Smith", "jane@example.com", "+0987654321"),
-    new Customer("3", "Mike Johnson", "mike@example.com", "+1122334455"),
-    new Customer("4", "Sarah Wilson", "sarah@example.com", "+5566778899"),
-  ];
+  private customers: Customer[] = [];
 
   async findById(id: string): Promise<Customer | null> {
-    return this.customers.find((customer) => customer.id === id) || null;
+    return this.customers.find(customer => customer.id === id) || null;
   }
 
   async findByEmail(email: string): Promise<Customer | null> {
-    return this.customers.find((customer) => customer.email === email) || null;
+    return this.customers.find(customer => customer.email === email) || null;
   }
 
   async save(customer: Customer): Promise<void> {
-    const index = this.customers.findIndex((c) => c.id === customer.id);
+    const index = this.customers.findIndex(c => c.id === customer.id);
     if (index >= 0) {
       this.customers[index] = customer;
     } else {
@@ -27,7 +22,7 @@ export class InMemoryCustomerRepository implements ICustomerRepository {
   }
 
   async delete(id: string): Promise<void> {
-    this.customers = this.customers.filter((c) => c.id !== id);
+    this.customers = this.customers.filter(c => c.id !== id);
   }
 
   async findAll(): Promise<Customer[]> {
@@ -41,14 +36,5 @@ export class InMemoryCustomerRepository implements ICustomerRepository {
   // Utility methods for testing
   clear(): void {
     this.customers = [];
-  }
-
-  seed(): void {
-    this.customers = [
-      new Customer("1", "John Doe", "john@example.com", "+1234567890"),
-      new Customer("2", "Jane Smith", "jane@example.com", "+0987654321"),
-      new Customer("3", "Mike Johnson", "mike@example.com", "+1122334455"),
-      new Customer("4", "Sarah Wilson", "sarah@example.com", "+5566778899"),
-    ];
   }
 }

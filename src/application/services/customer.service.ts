@@ -1,7 +1,7 @@
-import { CreateCustomerDto, UpdateCustomerDto, CustomerDto } from '../dtos/customer-dto';
-import { CreateCustomer } from '../use-cases/create-customer';
-import { GetCustomer } from '../use-cases/get-customer';
-import { UpdateCustomer } from '../use-cases/update-customer';
+import { CreateCustomerDto, CustomerDto, UpdateCustomerDto } from '../dtos/customer-dto';
+import { CreateCustomer } from '../use-cases/customer/create-customer';
+import { GetCustomer } from '../use-cases/customer/get-customer';
+import { UpdateCustomer } from '../use-cases/customer/update-customer';
 
 export class CustomerService {
   constructor(

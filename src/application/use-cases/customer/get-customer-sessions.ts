@@ -1,11 +1,12 @@
-import { IChatRepository } from "@domain/repositories/IChatRepository";
+import { IChatRepository } from '@domain/repositories/IChatRepository';
 
-import { SessionDto } from "../dtos/session-dto";
+import { SessionDto } from '../../dtos/session-dto';
 
 export class GetCustomerSessions {
   constructor(private chatRepository: IChatRepository) {}
 
-  async execute(customerId: string): Promise<SessionDto[]> {
+  // eslint-disable-next-line no-unused-vars
+  async execute(_customerId: string): Promise<SessionDto[]> {
     // This would require extending the IChatRepository interface
     // For now, we'll return a placeholder implementation
 

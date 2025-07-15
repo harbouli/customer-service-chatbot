@@ -20,8 +20,8 @@ import { AnalyticsService } from '../services/analytics.service';
 import { ChatService } from '../services/chat.service';
 import { CustomerService } from '../services/customer.service';
 import { ProductService } from '../services/product.service';
-import { CreateCustomer } from '../use-cases/create-customer';
-import { GetCustomer } from '../use-cases/get-customer';
+import { CreateCustomer } from '../use-cases/customer/create-customer';
+import { GetCustomer } from '../use-cases/customer/get-customer';
 
 // Services
 
