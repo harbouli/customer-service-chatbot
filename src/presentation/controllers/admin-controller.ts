@@ -1,11 +1,8 @@
-import { BulkInitializeEmbeddings, InitializeProductEmbeddings } from '@application/use-cases';
+import { InitializeProductEmbeddings } from '@application/use-cases';
 import { Request, Response } from 'express';
 
 export class AdminController {
-  constructor(
-    private initializeEmbeddingsUseCase: InitializeProductEmbeddings,
-    private bulkInitializeEmbeddingsUseCase: BulkInitializeEmbeddings
-  ) {}
+  constructor(private initializeEmbeddingsUseCase: InitializeProductEmbeddings) {}
 
   async initializeEmbeddings(req: Request, res: Response): Promise<void> {
     try {
@@ -59,7 +56,7 @@ export class AdminController {
     }
   }
 
-  async getEmbeddingStatus(req: Request, res: Response): Promise<void> {
+  async getEmbeddingStatus(_req: Request, res: Response): Promise<void> {
     try {
       const status = await this.initializeEmbeddingsUseCase.getInitializationStatus();
 
@@ -77,7 +74,7 @@ export class AdminController {
     }
   }
 
-  async validateEmbeddings(req: Request, res: Response): Promise<void> {
+  async validateEmbeddings(_req: Request, res: Response): Promise<void> {
     try {
       const validation = await this.initializeEmbeddingsUseCase.validateEmbeddings();
 
@@ -95,7 +92,7 @@ export class AdminController {
     }
   }
 
-  async clearCache(req: Request, res: Response): Promise<void> {
+  async clearCache(_req: Request, res: Response): Promise<void> {
     try {
       // TODO: Implement cache clearing
 

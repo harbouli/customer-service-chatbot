@@ -64,7 +64,7 @@ export function createAdminRateLimitMiddleware() {
       const ipKey = req.ip || 'unknown';
       return `admin-${userKey}-${ipKey}`;
     },
-    handler: (req: Request, res: Response) => {
+    handler: (_req: Request, res: Response) => {
       res.status(429).json({
         success: false,
         error: 'Admin rate limit exceeded',
@@ -91,7 +91,7 @@ export function createChatRateLimitMiddleware() {
       retryAfter: 60,
       type: 'CHAT_RATE_LIMIT_EXCEEDED',
     },
-    handler: (req: Request, res: Response) => {
+    handler: (_req: Request, res: Response) => {
       res.status(429).json({
         success: false,
         error: 'Chat rate limit exceeded',

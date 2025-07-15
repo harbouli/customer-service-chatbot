@@ -7,12 +7,9 @@ import { ServiceContainer } from './factories/service-container';
 import { HealthChecker, HealthCheckResult } from './health/health-checker';
 import { Metrics, MetricsCollector } from './monitoring/metrics-collector';
 import { InMemoryChatRepository } from './repositories/in-memory-chat-repository';
-import { InMemoryProductRepository } from './repositories/in-memory-product-repository';
 
 // ===========================
 export { InMemoryChatRepository } from './repositories/in-memory-chat-repository';
-export { InMemoryCustomerRepository } from './repositories/in-memory-customer-repository';
-export { InMemoryProductRepository } from './repositories/in-memory-product-repository';
 export { WeaviateVectorRepository } from './repositories/weaviate-vector-repository';
 
 // ===========================
@@ -347,12 +344,6 @@ export async function seedInfrastructureData(): Promise<void> {
 
   console.log('🌱 Seeding infrastructure with test data...');
 
-  const container = ServiceContainer.getInstance();
-
-  // Seed product repository
-  const productRepo = container.getProductRepository() as InMemoryProductRepository;
-  productRepo.seed();
-
   console.log('✅ Infrastructure data seeded successfully');
 }
 
@@ -370,9 +361,6 @@ export async function clearInfrastructureData(): Promise<void> {
   console.log('🧹 Clearing infrastructure data...');
 
   const container = ServiceContainer.getInstance();
-
-  const productRepo = container.getProductRepository() as InMemoryProductRepository;
-  productRepo.clear();
 
   const chatRepo = container.getChatRepository() as InMemoryChatRepository;
   chatRepo.clear();

@@ -87,15 +87,6 @@ export class InitializeProductEmbeddings {
     const startTime = Date.now();
     const mergedOptions = { ...this.defaultOptions, ...options };
 
-    console.log('🚀 Starting product embeddings initialization...');
-    console.log(`📊 Configuration:`, {
-      batchSize: mergedOptions.batchSize,
-      delayBetweenBatches: mergedOptions.delayBetweenBatches,
-      maxRetries: mergedOptions.maxRetries,
-      skipExisting: mergedOptions.skipExisting,
-      forceRegenerate: mergedOptions.forceRegenerate,
-    });
-
     // Show protection status
     if (mergedOptions.skipExisting && !mergedOptions.forceRegenerate) {
       console.log('🛡️ Protection Mode: ON - Existing embeddings will be preserved');
@@ -110,7 +101,6 @@ export class InitializeProductEmbeddings {
 
       // Get all products
       const products = await this.productRepository.findAll();
-      console.log(`📦 Found ${products.length} products to process`);
 
       if (products.length === 0) {
         return this.createEmptyResult(startTime);
@@ -126,7 +116,6 @@ export class InitializeProductEmbeddings {
       const { toProcess, summary } = filterResult;
 
       if (toProcess.length === 0) {
-        console.log('🎉 All products already have embeddings! Nothing to process.');
         const duration = Date.now() - startTime;
         return {
           totalProducts: summary.total,

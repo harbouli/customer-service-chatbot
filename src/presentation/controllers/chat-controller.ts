@@ -1,13 +1,9 @@
-import { ChatResponseDto } from "@application/index";
-import {
-  GetCustomerSessions,
-  GetSessionHistory,
-  ProcessChatMessage,
-} from "@application/use-cases";
-import { ChatRequestDto, MetricsCollector } from "@infrastructure/index";
-import { CustomError } from "@shared/errors/custom-error";
-import { Request, Response } from "express";
-import { validationResult } from "express-validator";
+import { ChatResponseDto } from '@application/index';
+import { GetCustomerSessions, GetSessionHistory, ProcessChatMessage } from '@application/use-cases';
+import { ChatRequestDto, MetricsCollector } from '@infrastructure/index';
+import { CustomError } from '@shared/errors/custom-error';
+import { Request, Response } from 'express';
+import { validationResult } from 'express-validator';
 
 export class ChatController {
   constructor(
@@ -26,7 +22,7 @@ export class ChatController {
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          error: "Validation failed",
+          error: 'Validation failed',
           details: errors.array(),
         });
         return;
@@ -36,9 +32,7 @@ export class ChatController {
       const request: ChatRequestDto = { customerId, message, sessionId };
 
       // Process chat message
-      const response: ChatResponseDto = await this.processChatMessage.execute(
-        request
-      );
+      const response: ChatResponseDto = await this.processChatMessage.execute(request);
 
       // Record metrics
       const responseTime = Date.now() - startTime;
@@ -57,7 +51,7 @@ export class ChatController {
       const responseTime = Date.now() - startTime;
       metrics.recordRequest(false, responseTime);
 
-      console.error("Chat message error:", error);
+      console.error('Chat message error:', error);
 
       if (error instanceof CustomError) {
         res.status(error.statusCode).json({
@@ -68,8 +62,8 @@ export class ChatController {
       } else {
         res.status(500).json({
           success: false,
-          error: "Failed to process chat message",
-          message: "An internal error occurred while processing your message",
+          error: 'Failed to process chat message',
+          message: 'An internal error occurred while processing your message',
         });
       }
     }
@@ -81,7 +75,7 @@ export class ChatController {
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          error: "Validation failed",
+          error: 'Validation failed',
           details: errors.array(),
         });
         return;
@@ -89,16 +83,14 @@ export class ChatController {
 
       const { sessionId } = req.params;
 
-      const sessionHistory = await this.getSessionHistoryUseCase.execute(
-        sessionId
-      );
+      const sessionHistory = await this.getSessionHistoryUseCase.execute(sessionId ?? '');
 
       res.status(200).json({
         success: true,
         data: sessionHistory,
       });
     } catch (error) {
-      console.error("Get session history error:", error);
+      console.error('Get session history error:', error);
 
       if (error instanceof CustomError) {
         res.status(error.statusCode).json({
@@ -109,7 +101,7 @@ export class ChatController {
       } else {
         res.status(500).json({
           success: false,
-          error: "Failed to retrieve session history",
+          error: 'Failed to retrieve session history',
         });
       }
     }
@@ -121,7 +113,7 @@ export class ChatController {
       if (!errors.isEmpty()) {
         res.status(400).json({
           success: false,
-          error: "Validation failed",
+          error: 'Validation failed',
           details: errors.array(),
         });
         return;
@@ -129,9 +121,7 @@ export class ChatController {
 
       const { customerId } = req.params;
 
-      const sessions = await this.getCustomerSessionsUseCase.execute(
-        customerId
-      );
+      const sessions = await this.getCustomerSessionsUseCase.execute(customerId ?? '');
 
       res.status(200).json({
         success: true,
@@ -141,7 +131,7 @@ export class ChatController {
         },
       });
     } catch (error) {
-      console.error("Get customer sessions error:", error);
+      console.error('Get customer sessions error:', error);
 
       if (error instanceof CustomError) {
         res.status(error.statusCode).json({
@@ -152,29 +142,27 @@ export class ChatController {
       } else {
         res.status(500).json({
           success: false,
-          error: "Failed to retrieve customer sessions",
+          error: 'Failed to retrieve customer sessions',
         });
       }
     }
   }
 
-  async endSession(req: Request, res: Response): Promise<void> {
+  async endSession(_req: Request, res: Response): Promise<void> {
     try {
-      const { sessionId } = req.params;
-
       // TODO: Implement end session use case
       // await this.endSessionUseCase.execute(sessionId);
 
       res.status(200).json({
         success: true,
-        message: "Session ended successfully",
+        message: 'Session ended successfully',
       });
     } catch (error) {
-      console.error("End session error:", error);
+      console.error('End session error:', error);
 
       res.status(500).json({
         success: false,
-        error: "Failed to end session",
+        error: 'Failed to end session',
       });
     }
   }

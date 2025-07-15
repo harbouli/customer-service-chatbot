@@ -1,26 +1,28 @@
-import { LoggingService } from "@infrastructure/services/logging-service";
-import { Request, Response, NextFunction } from "express";
+/* eslint-disable no-undef */
+import { LoggingService } from '@infrastructure/services/logging-service';
+import { NextFunction, Request, Response } from 'express';
 
 export function requestLoggingMiddleware() {
   const logger = LoggingService.getInstance();
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   return (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
-    const requestId = (req as any).id || "unknown";
+    const requestId = (req as any).id || 'unknown';
 
     // Log incoming request
-    logger.info("Incoming request", {
+    logger.info('Incoming request', {
       requestId,
       method: req.method,
       url: req.url,
-      userAgent: req.get("User-Agent"),
+      userAgent: req.get('User-Agent'),
       ip: req.ip,
-      contentType: req.get("Content-Type"),
-      contentLength: req.get("Content-Length"),
-      origin: req.get("Origin"),
-      referer: req.get("Referer"),
+      contentType: req.get('Content-Type'),
+      contentLength: req.get('Content-Length'),
+      origin: req.get('Origin'),
+      referer: req.get('Referer'),
       // Log body for non-GET requests (excluding sensitive data)
-      body: req.method !== "GET" ? sanitizeRequestBody(req.body) : undefined,
+      body: req.method !== 'GET' ? sanitizeRequestBody(req.body) : undefined,
       query: Object.keys(req.query).length > 0 ? req.query : undefined,
     });
 
@@ -42,31 +44,31 @@ export function requestLoggingMiddleware() {
 
     // Override end to log response
     const originalEnd = res.end;
-    res.end = function (this: Response, ...args: any[]) {
+    res.end = function (this: Response, chunk?: any, encodingOrCb?: any, cb?: () => void) {
       const duration = Date.now() - startTime;
 
       // Log response
-      logger.info("Request completed", {
+      logger.info('Request completed', {
         requestId,
         method: req.method,
         url: req.url,
         statusCode: res.statusCode,
         duration: `${duration}ms`,
-        contentLength: res.get("Content-Length"),
+        contentLength: res.get('Content-Length'),
         responseSize:
-          typeof responseBody === "string"
+          typeof responseBody === 'string'
             ? responseBody.length
             : responseBody
-            ? JSON.stringify(responseBody).length
-            : 0,
+              ? JSON.stringify(responseBody).length
+              : 0,
         // Log response body for errors or in debug mode
         responseBody:
-          res.statusCode >= 400 || process.env.LOG_LEVEL === "debug"
+          res.statusCode >= 400 || process.env.LOG_LEVEL === 'debug'
             ? sanitizeResponseBody(responseBody)
             : undefined,
       });
 
-      originalEnd.apply(this, args);
+      return originalEnd.call(this, chunk, encodingOrCb, cb);
     };
 
     next();
@@ -75,14 +77,14 @@ export function requestLoggingMiddleware() {
 
 // Sanitize request body to remove sensitive information
 function sanitizeRequestBody(body: any): any {
-  if (!body || typeof body !== "object") return body;
+  if (!body || typeof body !== 'object') return body;
 
-  const sensitiveFields = ["password", "token", "secret", "key", "auth"];
+  const sensitiveFields = ['password', 'token', 'secret', 'key', 'auth'];
   const sanitized = { ...body };
 
   for (const field of sensitiveFields) {
     if (sanitized[field]) {
-      sanitized[field] = "[REDACTED]";
+      sanitized[field] = '[REDACTED]';
     }
   }
 
@@ -91,16 +93,16 @@ function sanitizeRequestBody(body: any): any {
 
 // Sanitize response body to remove sensitive information
 function sanitizeResponseBody(body: any): any {
-  if (!body || typeof body !== "object") return body;
+  if (!body || typeof body !== 'object') return body;
 
   try {
-    const parsed = typeof body === "string" ? JSON.parse(body) : body;
-    const sensitiveFields = ["password", "token", "secret", "key"];
+    const parsed = typeof body === 'string' ? JSON.parse(body) : body;
+    const sensitiveFields = ['password', 'token', 'secret', 'key'];
 
     const sanitized = { ...parsed };
     for (const field of sensitiveFields) {
       if (sanitized[field]) {
-        sanitized[field] = "[REDACTED]";
+        sanitized[field] = '[REDACTED]';
       }
     }
 

@@ -1,9 +1,8 @@
-import { IChatRepository } from '@domain/repositories/IChatRepository';
-
 import { SessionDto } from '../../dtos/session-dto';
 
 export class GetCustomerSessions {
-  constructor(private chatRepository: IChatRepository) {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  constructor() {}
 
   // eslint-disable-next-line no-unused-vars
   async execute(_customerId: string): Promise<SessionDto[]> {

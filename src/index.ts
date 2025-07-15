@@ -123,7 +123,7 @@ async function initializeServer() {
     const getCustomer = new GetCustomer(customerRepository);
     const updateCustomer = new UpdateCustomer(customerRepository);
     const getSessionHistory = new GetSessionHistory(chatRepository);
-    const getCustomerSessions = new GetCustomerSessions(chatRepository);
+    const getCustomerSessions = new GetCustomerSessions();
 
     // Create missing use cases for CustomerController
     const deleteCustomer = new DeleteCustomer(customerRepository);

@@ -72,7 +72,7 @@ export class ProductController {
       const { productId } = req.params;
       const updateData: UpdateProductDto = req.body;
 
-      const product = await this.updateProductUseCase.execute(productId, updateData);
+      const product = await this.updateProductUseCase.execute(productId ?? '', updateData);
 
       res.status(200).json({
         success: true,
@@ -102,12 +102,12 @@ export class ProductController {
       const searchParams: ProductSearchDto = {
         query: req.query.q as string,
         category: req.query.category as string,
-        minPrice: req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined,
-        maxPrice: req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined,
-        inStock: req.query.inStock ? req.query.inStock === 'true' : undefined,
-        tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
+        ...(req.query.minPrice && { minPrice: parseFloat(req.query.minPrice as string) }),
+        ...(req.query.maxPrice && { maxPrice: parseFloat(req.query.maxPrice as string) }),
+        ...(req.query.inStock && { inStock: req.query.inStock === 'true' }),
+        ...(req.query.tags && { tags: (req.query.tags as string).split(',') }),
+        ...(req.query.limit && { limit: parseInt(req.query.limit as string) }),
+        ...(req.query.offset && { offset: parseInt(req.query.offset as string) }),
       };
 
       const products = await this.searchProductsUseCase.execute(searchParams);
@@ -144,7 +144,7 @@ export class ProductController {
 
       const { productId } = req.params;
 
-      await this.deleteProductUseCase.execute(productId);
+      await this.deleteProductUseCase.execute(productId ?? '');
 
       res.status(200).json({
         success: true,
@@ -168,7 +168,7 @@ export class ProductController {
     }
   }
 
-  async getProduct(req: Request, res: Response): Promise<void> {
+  async getProduct(_req: Request, res: Response): Promise<void> {
     try {
       // TODO: Implement GetProduct use case
       // const product = await this.getProductUseCase.execute(productId);

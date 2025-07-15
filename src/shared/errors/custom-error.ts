@@ -1,6 +1,6 @@
 export class CustomError extends Error {
   constructor(
-    public message: string,
+    public override message: string,
     public statusCode: number = 500,
     public code?: string
   ) {
@@ -12,12 +12,12 @@ export class CustomError extends Error {
 
 export class ValidationError extends CustomError {
   constructor(message: string) {
-    super(message, 400, "VALIDATION_ERROR");
+    super(message, 400, 'VALIDATION_ERROR');
   }
 }
 
 export class NotFoundError extends CustomError {
   constructor(message: string) {
-    super(message, 404, "NOT_FOUND");
+    super(message, 404, 'NOT_FOUND');
   }
 }

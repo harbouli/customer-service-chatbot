@@ -13,7 +13,6 @@ import { IChatbotService, IGenerativeAIService } from '@domain/services/chatbot-
 import { ConfigService } from '@infrastructure/config/app-config';
 import { MongoDB } from '@infrastructure/database/mongodb'; // NEW
 import { InMemoryChatRepository } from '@infrastructure/repositories/in-memory-chat-repository';
-import { InMemoryProductRepository } from '@infrastructure/repositories/in-memory-product-repository';
 import { MongoDBUserRepository } from '@infrastructure/repositories/mongodb-user-repository'; // NEW
 import { WeaviateVectorRepository } from '@infrastructure/repositories/weaviate-vector-repository';
 import { EnhancedChatbotService } from '@infrastructure/services/enhanced-chatbot-service';
@@ -39,6 +38,7 @@ import { GetAllCustomers } from '@application/use-cases/customer/get-all-custome
 
 // Import Customer Controller
 import { CustomerController } from '@presentation/controllers/customer-controller';
+import { MongoDBProductRepository } from '../repositories/mongodb-product-repository';
 
 export class ServiceContainer {
   private static instance: ServiceContainer;
@@ -130,7 +130,7 @@ export class ServiceContainer {
     this.register('customerRepository', customerRepository);
 
     // Product Repository
-    const productRepository = new InMemoryProductRepository();
+    const productRepository = new MongoDBProductRepository();
     this.register('productRepository', productRepository);
 
     // Chat Repository
@@ -179,29 +179,73 @@ export class ServiceContainer {
   }
 
   private async initializeAIServices(config: ConfigService): Promise<void> {
+    console.log('🤖 Initializing AI services...');
+
     const aiConfig = config.getAI();
 
-    // AI Service
-    if (aiConfig.googleApiKey) {
+    // DEBUG: Log the configuration
+    console.log('🔍 AI Configuration:', {
+      hasApiKey: !!aiConfig.googleApiKey,
+      apiKeyLength: aiConfig.googleApiKey?.length || 0,
+      modelName: aiConfig.modelName,
+      embeddingModelName: aiConfig.embeddingModelName,
+    });
+
+    // Check if API key exists
+    if (!aiConfig.googleApiKey) {
+      console.error('❌ GOOGLE_AI_API_KEY is missing from environment variables');
+      console.log('💡 To fix this:');
+      console.log('   1. Get API key from https://makersuite.google.com/app/apikey');
+      console.log('   2. Add GOOGLE_AI_API_KEY=your_key_here to your .env file');
+      console.log('   3. Restart the application');
+      return;
+    }
+
+    if (aiConfig.googleApiKey.startsWith('your_') || aiConfig.googleApiKey === 'dummy-key') {
+      console.error('❌ Please replace placeholder API key with real Google AI API key');
+      return;
+    }
+
+    try {
+      // AI Service
+      console.log('🔄 Creating Google AI service...');
       const aiService = new GoogleGenerativeAIService(
         aiConfig.googleApiKey,
         aiConfig.modelName,
         aiConfig.embeddingModelName
       );
+
+      console.log('🔄 Initializing AI service...');
       await aiService.initialize();
       this.register('aiService', aiService);
+      console.log('✅ AI service initialized successfully');
 
       // Chatbot Service
+      console.log('🔄 Creating chatbot service...');
       const chatbotService = new EnhancedChatbotService(
         this.get('productRepository'),
         this.get('vectorRepository'),
         aiService
       );
       this.register('chatbotService', chatbotService);
+      console.log('✅ Chatbot service initialized successfully');
 
-      console.log('✅ AI services initialized');
-    } else {
-      console.warn('⚠️ AI services not initialized - missing API key');
+      console.log('✅ All AI services initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize AI services:', error);
+
+      if (error instanceof Error) {
+        if (error.message.includes('API_KEY_INVALID')) {
+          console.error('💡 Your Google AI API key appears to be invalid');
+        } else if (error.message.includes('QUOTA_EXCEEDED')) {
+          console.error('💡 Your Google AI API quota has been exceeded');
+        } else if (error.message.includes('PERMISSION_DENIED')) {
+          console.error('💡 Your Google AI API key lacks required permissions');
+        }
+      }
+
+      // Don't throw - allow app to continue without AI
+      console.warn('⚠️ Continuing without AI services...');
     }
   }
 

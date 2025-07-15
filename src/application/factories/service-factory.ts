@@ -84,7 +84,7 @@ export class ServiceFactory {
         this.chatbotService
       );
       const sessionHistoryUseCase = new GetSessionHistory(this.chatRepository);
-      const customerSessionsUseCase = new GetCustomerSessions(this.chatRepository);
+      const customerSessionsUseCase = new GetCustomerSessions();
 
       this.chatService = new ChatService(
         processChatMessage,
@@ -97,10 +97,7 @@ export class ServiceFactory {
 
   getAnalyticsService(): AnalyticsService {
     if (!this.analyticsService) {
-      const chatAnalyticsUseCase = new GetChatAnalytics(
-        this.chatRepository,
-        this.productRepository
-      );
+      const chatAnalyticsUseCase = new GetChatAnalytics(this.productRepository);
 
       this.analyticsService = new AnalyticsService(chatAnalyticsUseCase);
     }

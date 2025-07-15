@@ -1,21 +1,22 @@
-import compression from "compression";
+import compression from 'compression';
+import { RequestHandler } from 'express';
 
-export function createCompressionMiddleware() {
+export function createCompressionMiddleware(): RequestHandler {
   return compression({
     filter: (req, res) => {
       // Don't compress if client doesn't support it
-      if (req.headers["x-no-compression"]) {
+      if (req.headers['x-no-compression']) {
         return false;
       }
 
       // Don't compress images, videos, or already compressed files
-      const contentType = res.getHeader("content-type") as string;
+      const contentType = res.getHeader('content-type') as string;
       if (contentType) {
         if (
-          contentType.includes("image/") ||
-          contentType.includes("video/") ||
-          contentType.includes("application/zip") ||
-          contentType.includes("application/gzip")
+          contentType.includes('image/') ||
+          contentType.includes('video/') ||
+          contentType.includes('application/zip') ||
+          contentType.includes('application/gzip')
         ) {
           return false;
         }

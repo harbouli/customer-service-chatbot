@@ -1,8 +1,8 @@
-import { CreateCustomerDto, CustomerDto } from "../dtos/customer-dto";
-import { CustomerCreatedEvent } from "../events/customer-created-event";
-import { IEventBus } from "../events/IEventBus";
-import { CreateCustomer } from "../use-cases/create-customer";
-import { CustomerValidator } from "../validators/customer-validator";
+import { CreateCustomerDto, CustomerDto } from '../dtos/customer-dto';
+import { CustomerCreatedEvent } from '../events/customer-created-event';
+import { IEventBus } from '../events/IEventBus';
+import { CreateCustomer } from '../use-cases/customer/create-customer';
+import { CustomerValidator } from '../validators/customer-validator';
 
 export interface CreateCustomerCommand {
   customer: CreateCustomerDto;

@@ -1,9 +1,11 @@
+import { ConfigService } from '../config/app-config';
+
 export interface HealthCheckResult {
-  status: "healthy" | "unhealthy" | "degraded";
+  status: 'healthy' | 'unhealthy' | 'degraded';
   checks: Record<
     string,
     {
-      status: "up" | "down" | "degraded";
+      status: 'up' | 'down' | 'degraded';
       message?: string;
       responseTime?: number;
       details?: any;
@@ -22,9 +24,6 @@ export class HealthChecker {
     // Check database connection
     checks.database = await this.checkDatabase();
 
-    // Check AI service
-    checks.aiService = await this.checkAIService();
-
     // Check vector database
     checks.vectorDatabase = await this.checkVectorDatabase();
 
@@ -32,13 +31,13 @@ export class HealthChecker {
     checks.cache = await this.checkCache();
 
     // Determine overall status
-    const statuses = Object.values(checks).map((check) => check.status);
-    let overallStatus: "healthy" | "unhealthy" | "degraded" = "healthy";
+    const statuses = Object.values(checks).map(check => check.status);
+    let overallStatus: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
 
-    if (statuses.includes("down")) {
-      overallStatus = "unhealthy";
-    } else if (statuses.includes("degraded")) {
-      overallStatus = "degraded";
+    if (statuses.includes('down')) {
+      overallStatus = 'unhealthy';
+    } else if (statuses.includes('degraded')) {
+      overallStatus = 'degraded';
     }
 
     return {
@@ -53,16 +52,16 @@ export class HealthChecker {
     const start = Date.now();
     try {
       // Mock database check
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       return {
-        status: "up",
-        message: "Database connection successful",
+        status: 'up',
+        message: 'Database connection successful',
         responseTime: Date.now() - start,
       };
     } catch (error) {
       return {
-        status: "down",
+        status: 'down',
         message: `Database connection failed: ${error}`,
         responseTime: Date.now() - start,
       };
@@ -76,8 +75,8 @@ export class HealthChecker {
       const config = ConfigService.getInstance().getVector();
 
       return {
-        status: "up",
-        message: "Vector database available",
+        status: 'up',
+        message: 'Vector database available',
         responseTime: Date.now() - start,
         details: {
           url: config.weaviateUrl,
@@ -86,7 +85,7 @@ export class HealthChecker {
       };
     } catch (error) {
       return {
-        status: "down",
+        status: 'down',
         message: `Vector database check failed: ${error}`,
         responseTime: Date.now() - start,
       };
@@ -98,13 +97,13 @@ export class HealthChecker {
     try {
       // Mock cache check
       return {
-        status: "up",
-        message: "Cache service available",
+        status: 'up',
+        message: 'Cache service available',
         responseTime: Date.now() - start,
       };
     } catch (error) {
       return {
-        status: "down",
+        status: 'down',
         message: `Cache check failed: ${error}`,
         responseTime: Date.now() - start,
       };

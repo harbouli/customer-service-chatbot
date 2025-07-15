@@ -1,7 +1,6 @@
 import { Product } from '@domain/entities/product';
 import { IProductRepository } from '@domain/repositories/IProductRepository';
 import { IVectorRepository } from '@domain/repositories/IVectorRepository';
-import { IGenerativeAIService } from '@domain/services/chatbot-service';
 import { ValidationError } from '@shared/errors/custom-error';
 import { CreateProductEmbedding, EmbeddingResult } from './create-product-embedding';
 
@@ -48,7 +47,6 @@ export class CreateProductEmbeddingsBatch {
   constructor(
     private productRepository: IProductRepository,
     private vectorRepository: IVectorRepository,
-    private aiService: IGenerativeAIService,
     private createSingleEmbedding: CreateProductEmbedding
   ) {}
 

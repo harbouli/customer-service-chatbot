@@ -1,13 +1,9 @@
-import { IChatRepository } from "@domain/repositories/IChatRepository";
-import { IProductRepository } from "@domain/repositories/IProductRepository";
+import { IProductRepository } from '@domain/repositories/IProductRepository';
 
-import { ChatAnalyticsDto, ProductAnalyticsDto } from "../dtos/analytics-dto";
+import { ChatAnalyticsDto, ProductAnalyticsDto } from '../dtos/analytics-dto';
 
 export class GetChatAnalytics {
-  constructor(
-    private chatRepository: IChatRepository,
-    private productRepository: IProductRepository
-  ) {}
+  constructor(private productRepository: IProductRepository) {}
 
   async executeChatAnalytics(): Promise<ChatAnalyticsDto> {
     // This would require extending repositories to support analytics
@@ -18,19 +14,22 @@ export class GetChatAnalytics {
       totalMessages: 0,
       averageSessionLength: 0,
       mostCommonQueries: [],
-      customerSatisfactionScore: undefined,
+      customerSatisfactionScore: 0, // statt undefined
     };
   }
 
   async executeProductAnalytics(): Promise<ProductAnalyticsDto> {
     const products = await this.productRepository.findAll();
-    const productsInStock = products.filter((p) => p.inStock);
+    const productsInStock = products.filter(p => p.inStock);
 
     // Count products by category
-    const categoryCount = products.reduce((acc, product) => {
-      acc[product.category] = (acc[product.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const categoryCount = products.reduce(
+      (acc, product) => {
+        acc[product.category] = (acc[product.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const topCategories = Object.entries(categoryCount)
       .map(([category, productCount]) => ({ category, productCount }))
